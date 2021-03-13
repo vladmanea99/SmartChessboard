@@ -30,3 +30,5 @@
 *.exe
 *.out
 *.app
+
+.vs/SmartChessboard/v16/Browse.VC.opendb
