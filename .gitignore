@@ -37,5 +37,8 @@
 *.ilk
 *.suo
 
+*.db
+*.db-shm
+
 
 .vs/SmartChessboard/v16/Browse.VC.opendb
