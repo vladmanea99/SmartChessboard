@@ -4,6 +4,7 @@
 #include <httplib.h>
 #include <vector>
 #include <map>
+#include <string>
 
 #include <stdlib.h>
 #include <base64.h>
@@ -20,8 +21,17 @@ using namespace cv;
 httplib::Server svr;
 
 map<int, string> piecesMap;
+map<char, int> piecesNamesMap;
 
 int board[8][8] = { 0 };
+
+struct Info {
+    char turn;
+    string castling;
+    string enPassant;
+    int halfmove;
+    int fullmove;
+};
 
 class Piece {
 private:
@@ -64,6 +74,7 @@ void drawBoard(RenderWindow* window) {
 void drawPiece(RenderWindow* window, Piece piece) {
     sf::Texture pieceTexture;
     string name = piecesMap[piece.getCode()];
+
     pieceTexture.loadFromFile("pieces/" + name + ".png");
 
     sf::Sprite pieceSprite;
@@ -143,7 +154,7 @@ void initializePieces(vector<Piece> &pieces) {
     board[7][7] = 11;
 }
 
-void initializeBoard(RenderWindow* window, vector<Piece> &pieces) {
+void drawPieces(RenderWindow* window, vector<Piece> &pieces) {
     for (auto & it : pieces) {
         drawPiece(window, it);
     }
@@ -164,11 +175,74 @@ void initializeMap(map<int, string> &map) {
     map.insert({ 11, "white_rook" });
 }
 
+void initializePiecesNamesMap(map<char, int>& map) {
+    map.insert({ 'b', 0 });
+    map.insert({ 'k', 1 });
+    map.insert({ 'n', 2 });
+    map.insert({ 'p', 3 });
+    map.insert({ 'q', 4 });
+    map.insert({ 'r', 5 });
+    map.insert({ 'B', 6 });
+    map.insert({ 'K', 7 });
+    map.insert({ 'N', 8 });
+    map.insert({ 'P', 9 });
+    map.insert({ 'Q', 10 });
+    map.insert({ 'R', 11 });
+}
+
+void getFENstring(string &str) {
+    cout << "Enter FEN string:" << endl;
+    getline(cin, str);
+}
+
+void processFENstring(string str, int mat[][8], vector<Piece> &pieces, Info &info) {
+    int i = 0;
+    int j = 0;
+    int idx = 0;
+    for (idx = 0; idx < str.length() && str[idx] != ' '; idx++) {
+        if (isalpha(str[idx])) {
+            const int code = piecesNamesMap[str[idx]];
+            mat[i][j] = code;
+            Piece piece = Piece(j, i, code);
+            pieces.push_back(piece);
+            j++;
+        }
+        else if (isdigit(str[idx])) {
+            j = j + (str[idx] - '0');
+        }
+        else if (str[idx] == '/') {
+            i++;
+            j = 0;
+        }
+    }
+
+    idx++;
+    string substr = str.substr(idx, str.length() - idx);
+    istringstream ss(substr);
+    string word;
+    vector<string> infoArr;
+
+    while (ss >> word) infoArr.push_back(word);
+
+    info.turn = infoArr[0][0];
+    info.castling = infoArr[1];
+    info.enPassant = infoArr[2];
+    info.halfmove = stoi(infoArr[3]);
+    info.fullmove = stoi(infoArr[4]);
+}
+
 int main() {
     sf::RenderWindow window(sf::VideoMode(800, 800), "My window");
     vector<Piece> pieces;
     initializeMap(piecesMap);
-
+    initializePiecesNamesMap(piecesNamesMap);
+    string FEN;
+    int piecesMat[8][8] = { 0 };
+    vector<Piece> FENPieces;
+    Info FENInfo;
+    getFENstring(FEN);
+    processFENstring(FEN, piecesMat, FENPieces, FENInfo);
+    
     while (window.isOpen())
     {
         // check all the window's events that were triggered since the last iteration of the loop
@@ -185,8 +259,8 @@ int main() {
 
         // draw everything here...
         drawBoard(&window);
-        initializePieces(pieces);
-        initializeBoard(&window, pieces);
+        // initializePieces(pieces);
+        drawPieces(&window, FENPieces);
 
         // end the current frame
         window.display();
@@ -194,12 +268,11 @@ int main() {
 
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            cout << board[i][j] << ' ';
+            cout << piecesMat[i][j] << ' ';
         }
-
         cout << endl;
     }
-
+    
     /*svr.Get("/hi", [&](const Request& req, Response& res) {
         string image_path = "chessboard.png";
         Mat img = cv::imread(image_path, IMREAD_COLOR);
@@ -215,5 +288,6 @@ int main() {
         });
 
     svr.listen("127.0.0.1", 8080);*/
+
     return 0;
 }
