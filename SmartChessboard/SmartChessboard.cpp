@@ -23,7 +23,7 @@ httplib::Server svr;
 map<int, string> piecesMap;
 map<char, int> piecesNamesMap;
 
-int board[8][8] = { 0 };
+vector<vector<int>> startingBoard;
 
 struct Info {
     char turn;
@@ -55,7 +55,66 @@ public:
     int getY() {
         return this->y;
     }
+
+    void setX(int x) {
+        this->x = x;
+    }
+
+    void setY(int y) {
+        this->y = y;
+    }
 };
+
+class Position {
+private:
+    vector<vector<int>> board;
+    struct Info info;
+
+public:
+    Position() {
+        this->board.resize(8);
+        for (int i = 0; i < 8; i++) {
+            this->board[i].resize(8);
+        }
+    }
+
+    Position(vector<vector<int>> b, struct Info i) {
+        this->board.resize(8);
+        for (int i = 0; i < 8; i++) {
+            this->board[i].resize(8);
+        }
+
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                this->board[i][j] = b[i][j];
+            }
+        }
+        this->info = i;
+    }
+
+    vector<vector<int>> getBoard() {
+        return this->board;
+    }
+
+    struct Info getInfo() {
+        return this->info;
+    }
+
+    void setBoard(int b[8][8]) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                this->board[i][j] = b[i][j];
+            }
+        }
+    }
+
+    void setInfo(struct Info i) {
+        this->info = i;
+    }
+};
+
+vector<Position> positions;
+vector<Piece> pieces;
 
 void drawBoard(RenderWindow* window) {
     sf::Texture texture;
@@ -85,73 +144,73 @@ void drawPiece(RenderWindow* window, Piece piece) {
 }
 
 void initializePieces(vector<Piece> &pieces) {
-    pieces.push_back(Piece(0, 0, 5));
-    pieces.push_back(Piece(1, 0, 2));
-    pieces.push_back(Piece(2, 0, 0));
-    pieces.push_back(Piece(3, 0, 4));
-    pieces.push_back(Piece(4, 0, 1));
-    pieces.push_back(Piece(5, 0, 0));
-    pieces.push_back(Piece(6, 0, 2));
-    pieces.push_back(Piece(7, 0, 5));
-    pieces.push_back(Piece(0, 1, 3));
-    pieces.push_back(Piece(1, 1, 3));
-    pieces.push_back(Piece(2, 1, 3));
-    pieces.push_back(Piece(3, 1, 3));
-    pieces.push_back(Piece(4, 1, 3));
-    pieces.push_back(Piece(5, 1, 3));
-    pieces.push_back(Piece(6, 1, 3));
-    pieces.push_back(Piece(7, 1, 3));
+    pieces.push_back(Piece(0, 0, 6));
+    pieces.push_back(Piece(1, 0, 3));
+    pieces.push_back(Piece(2, 0, 1));
+    pieces.push_back(Piece(3, 0, 5));
+    pieces.push_back(Piece(4, 0, 2));
+    pieces.push_back(Piece(5, 0, 1));
+    pieces.push_back(Piece(6, 0, 3));
+    pieces.push_back(Piece(7, 0, 6));
+    pieces.push_back(Piece(0, 1, 4));
+    pieces.push_back(Piece(1, 1, 4));
+    pieces.push_back(Piece(2, 1, 4));
+    pieces.push_back(Piece(3, 1, 4));
+    pieces.push_back(Piece(4, 1, 4));
+    pieces.push_back(Piece(5, 1, 4));
+    pieces.push_back(Piece(6, 1, 4));
+    pieces.push_back(Piece(7, 1, 4));
 
-    pieces.push_back(Piece(0, 6, 9));
-    pieces.push_back(Piece(1, 6, 9));
-    pieces.push_back(Piece(2, 6, 9));
-    pieces.push_back(Piece(3, 6, 9));
-    pieces.push_back(Piece(4, 6, 9));
-    pieces.push_back(Piece(5, 6, 9));
-    pieces.push_back(Piece(6, 6, 9));
-    pieces.push_back(Piece(7, 6, 9));
-    pieces.push_back(Piece(0, 7, 11));
-    pieces.push_back(Piece(1, 7, 8));
-    pieces.push_back(Piece(2, 7, 6));
-    pieces.push_back(Piece(3, 7, 10));
-    pieces.push_back(Piece(4, 7, 7));
-    pieces.push_back(Piece(5, 7, 6));
-    pieces.push_back(Piece(6, 7, 8));
-    pieces.push_back(Piece(7, 7, 11));
+    pieces.push_back(Piece(0, 6, 10));
+    pieces.push_back(Piece(1, 6, 10));
+    pieces.push_back(Piece(2, 6, 10));
+    pieces.push_back(Piece(3, 6, 10));
+    pieces.push_back(Piece(4, 6, 10));
+    pieces.push_back(Piece(5, 6, 10));
+    pieces.push_back(Piece(6, 6, 10));
+    pieces.push_back(Piece(7, 6, 10));
+    pieces.push_back(Piece(0, 7, 12));
+    pieces.push_back(Piece(1, 7, 9));
+    pieces.push_back(Piece(2, 7, 7));
+    pieces.push_back(Piece(3, 7, 11));
+    pieces.push_back(Piece(4, 7, 8));
+    pieces.push_back(Piece(5, 7, 7));
+    pieces.push_back(Piece(6, 7, 9));
+    pieces.push_back(Piece(7, 7, 12));
 
-    board[0][0] = 5;
-    board[0][1] = 2;
-    board[0][2] = 0;
-    board[0][3] = 4;
-    board[0][4] = 1;
-    board[0][5] = 0;
-    board[0][6] = 2;
-    board[0][7] = 5;
-    board[1][0] = 3;
-    board[1][1] = 3;
-    board[1][2] = 3;
-    board[1][3] = 3;
-    board[1][4] = 3;
-    board[1][5] = 3;
-    board[1][6] = 3;
-    board[1][7] = 3;
+    startingBoard[0][0] = 6;
+    startingBoard[0][1] = 3;
+    startingBoard[0][2] = 1;
+    startingBoard[0][3] = 5;
+    startingBoard[0][4] = 2;
+    startingBoard[0][5] = 1;
+    startingBoard[0][6] = 3;
+    startingBoard[0][7] = 6;
+    startingBoard[1][0] = 4;
+    startingBoard[1][1] = 4;
+    startingBoard[1][2] = 4;
+    startingBoard[1][3] = 4;
+    startingBoard[1][4] = 4;
+    startingBoard[1][5] = 4;
+    startingBoard[1][6] = 4;
+    startingBoard[1][7] = 4;
 
-    board[6][0] = 9;
-    board[6][1] = 9;
-    board[6][2] = 9;
-    board[6][3] = 9;
-    board[6][4] = 9;
-    board[6][5] = 9;
-    board[6][6] = 9;
-    board[6][7] = 9;
-    board[7][0] = 11;
-    board[7][1] = 8;
-    board[7][2] = 6;
-    board[7][3] = 10;
-    board[7][4] = 7;
-    board[7][5] = 6;
-    board[7][6] = 8;
-    board[7][7] = 11;
+    startingBoard[6][0] = 10;
+    startingBoard[6][1] = 10;
+    startingBoard[6][2] = 10;
+    startingBoard[6][3] = 10;
+    startingBoard[6][4] = 10;
+    startingBoard[6][5] = 10;
+    startingBoard[6][6] = 10;
+    startingBoard[6][7] = 10;
+    startingBoard[7][0] = 12;
+    startingBoard[7][1] = 9;
+    startingBoard[7][2] = 7;
+    startingBoard[7][3] = 11;
+    startingBoard[7][4] = 8;
+    startingBoard[7][5] = 7;
+    startingBoard[7][6] = 9;
+    startingBoard[7][7] = 12;
 }
 
 void drawPieces(RenderWindow* window, vector<Piece> &pieces) {
@@ -161,18 +220,18 @@ void drawPieces(RenderWindow* window, vector<Piece> &pieces) {
 }
 
 void initializeMap(map<int, string> &map) {
-    map.insert({ 0, "black_bishop" });
-    map.insert({ 1, "black_king" });
-    map.insert({ 2, "black_knight" });
-    map.insert({ 3, "black_pawn" });
-    map.insert({ 4, "black_queen" });
-    map.insert({ 5, "black_rook" });
-    map.insert({ 6, "white_bishop" });
-    map.insert({ 7, "white_king" });
-    map.insert({ 8, "white_knight" });
-    map.insert({ 9, "white_pawn" });
-    map.insert({ 10, "white_queen" });
-    map.insert({ 11, "white_rook" });
+    map.insert({ 1, "black_bishop" });
+    map.insert({ 2, "black_king" });
+    map.insert({ 3, "black_knight" });
+    map.insert({ 4, "black_pawn" });
+    map.insert({ 5, "black_queen" });
+    map.insert({ 6, "black_rook" });
+    map.insert({ 7, "white_bishop" });
+    map.insert({ 8, "white_king" });
+    map.insert({ 9, "white_knight" });
+    map.insert({ 10, "white_pawn" });
+    map.insert({ 11, "white_queen" });
+    map.insert({ 12, "white_rook" });
 }
 
 void initializePiecesNamesMap(map<char, int>& map) {
@@ -195,7 +254,7 @@ void getFENstring(string &str) {
     getline(cin, str);
 }
 
-void processFENstring(string str, int mat[][8], vector<Piece> &pieces, Info &info) {
+void processFENstring(string str, vector<vector<int>> mat, vector<Piece> &pieces, Info &info) {
     int i = 0;
     int j = 0;
     int idx = 0;
@@ -231,17 +290,195 @@ void processFENstring(string str, int mat[][8], vector<Piece> &pieces, Info &inf
     info.fullmove = stoi(infoArr[4]);
 }
 
+void kingSideCastling(vector<vector<int>> b, struct Info& i) {
+    if (i.turn == 'b') {
+        for (auto& p : pieces) {
+            if (p.getCode() == 2) {
+                b[0][6] = 2;
+                b[p.getY()][p.getX()] = 0;
+                p.setY(0);
+                p.setX(6);
+            }
+            if (p.getCode() == 6 && p.getX() == 7) {
+                b[0][5] = 6;
+                b[p.getY()][p.getX()] = 0;
+                p.setY(0);
+                p.setX(5);
+            }
+        }
+        size_t p = i.castling.find("kq");
+        if (p != string::npos) {
+            i.castling.erase(p, 2);
+        }
+        p = i.castling.find("k");
+        if (p != string::npos) {
+            i.castling.erase(p, 1);
+        }
+        i.turn = 'w';
+        i.halfmove++;
+        i.fullmove++;
+    }
+    else {
+        for (auto& p : pieces) {
+            if (p.getCode() == 8) {
+                b[7][6] = 8;
+                b[p.getY()][p.getX()] = 0;
+                p.setY(7);
+                p.setX(6);
+            }
+            if (p.getCode() == 12 && p.getX() == 7) {
+                b[7][5] = 12;
+                b[p.getY()][p.getX()] = 0;
+                p.setY(7);
+                p.setX(5);
+            }
+        }
+        size_t p = i.castling.find("KQ");
+        if (p != string::npos) {
+            i.castling.erase(p, 2);
+        }
+        p = i.castling.find("K");
+        if (p != string::npos) {
+            i.castling.erase(p, 1);
+        }
+        i.turn = 'b';
+        i.halfmove++;
+    }
+}
+
+void queenSideCastling(vector<vector<int>> b, struct Info& i) {
+    if (i.turn == 'b') {
+        for (auto& p : pieces) {
+            if (p.getCode() == 2) {
+                b[0][2] = 2;
+                b[p.getY()][p.getX()] = 0;
+                p.setY(0);
+                p.setX(2);
+            }
+            if (p.getCode() == 6 && p.getX() == 0) {
+                b[0][3] = 6;
+                b[p.getY()][p.getX()] = 0;
+                p.setY(0);
+                p.setX(3);
+            }
+        }
+        size_t p = i.castling.find("kq");
+        if (p != string::npos) {
+            i.castling.erase(p, 2);
+        }
+        p = i.castling.find("q");
+        if (p != string::npos) {
+            i.castling.erase(p, 1);
+        }
+        i.turn = 'w';
+        i.halfmove++;
+        i.fullmove++;
+    }
+    else {
+        for (auto& p : pieces) {
+            if (p.getCode() == 8) {
+                b[7][2] = 8;
+                b[p.getY()][p.getX()] = 0;
+                p.setY(7);
+                p.setX(2);
+            }
+            if (p.getCode() == 12 && p.getX() == 0) {
+                b[7][3] = 12;
+                b[p.getY()][p.getX()] = 0;
+                p.setY(7);
+                p.setX(3);
+            }
+        }
+        size_t p = i.castling.find("KQ");
+        if (p != string::npos) {
+            i.castling.erase(p, 2);
+        }
+        p = i.castling.find("Q");
+        if (p != string::npos) {
+            i.castling.erase(p, 1);
+        }
+        i.turn = 'b';
+        i.halfmove++;
+    }
+}
+
+void listProcessing(vector<string> list) {
+    for (auto& it : list) {
+        vector<vector<int>> b;
+        struct Info i;
+        b.resize(8);
+        for (int i = 0; i < 8; i++) {
+            b[i].resize(8);
+        }
+
+        if (positions.size() == 0) {
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    b[i][j] = startingBoard[i][j];
+                }
+            }
+            i.turn = 'w';
+            i.castling = "KQkq";
+            i.enPassant = "-";
+            i.halfmove = 0;
+            i.fullmove = 1;
+        }
+        else {
+            vector<vector<int>> lastBoard = positions.at(positions.size() - 1).getBoard();
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    b[i][j] = lastBoard[i][j];
+                }
+            }
+            i = positions.at(positions.size() - 1).getInfo();
+        }
+
+        if (it == "O-O") {
+            kingSideCastling(b, i);
+        }
+        else if (it == "O-O-O") {
+            queenSideCastling(b, i);
+        }
+        if (i.castling == "") {
+            i.castling = "-";
+        }
+
+        Position pos = Position(b, i);
+        positions.push_back(pos);
+    }
+}
+
 int main() {
+    startingBoard.resize(8);
+    for (int i = 0; i < 8; i++) {
+        startingBoard[i].resize(8);
+    }
+
     sf::RenderWindow window(sf::VideoMode(800, 800), "My window");
-    vector<Piece> pieces;
     initializeMap(piecesMap);
     initializePiecesNamesMap(piecesNamesMap);
+    initializePieces(pieces);
+
     string FEN;
-    int piecesMat[8][8] = { 0 };
+    vector<vector<int>> piecesMat;
+    piecesMat.resize(8);
+    for (int i = 0; i < 8; i++) {
+        piecesMat[i].resize(8);
+    }
     vector<Piece> FENPieces;
     Info FENInfo;
-    getFENstring(FEN);
-    processFENstring(FEN, piecesMat, FENPieces, FENInfo);
+    // getFENstring(FEN);
+    // processFENstring(FEN, piecesMat, FENPieces, FENInfo);
+    
+    vector<string> moves;
+    moves.push_back("O-O");
+    moves.push_back("O-O-O");
+
+
+    listProcessing(moves);
+    Position lastPos = positions.at(positions.size() - 1);
+    vector<vector<int>> b = positions.at(positions.size() - 1).getBoard();
+    cout << lastPos.getInfo().castling;
     
     while (window.isOpen())
     {
@@ -259,16 +496,16 @@ int main() {
 
         // draw everything here...
         drawBoard(&window);
-        // initializePieces(pieces);
-        drawPieces(&window, FENPieces);
+        drawPieces(&window, pieces);
 
         // end the current frame
         window.display();
     }
-
+    
+    
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            cout << piecesMat[i][j] << ' ';
+            cout << b[i][j] << ' ';
         }
         cout << endl;
     }
