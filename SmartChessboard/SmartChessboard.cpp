@@ -5,7 +5,7 @@
 #include <vector>
 #include <map>
 #include <string>
-
+#include <typeinfo>
 #include <stdlib.h>
 #include <base64.h>
 #include <math.h>
@@ -402,6 +402,64 @@ void queenSideCastling(vector<vector<int>> b, struct Info& i) {
     }
 }
 
+void pawnMove(vector<vector<int>> &b, struct Info& i, string it)
+{
+    //a trebuie sa dau adresa matricei b, altfel nu mi le modifica.
+    //col = litera = numarul coloanei in matrice
+    //lin = cifra = numarul liniei in matrice
+    std::vector<char> v(it.begin(), it.end());
+    int col = int(v[0]) - 97;
+    int lin = v[1] - '0';
+    if (i.turn == 'w'){ // daca e tura albului..
+        for (int j = 8 - lin + 1; j < 8; j++) {//merg in JOS pe linii pana gasesc primul pion.Incep de la urmatoarea pozitie sub pion(8-i+1) ca sa nu faca 1 ciclu degeaba
+            if (b[j][col] == 10) {//l-am gasit
+                for (auto& p : pieces) {//caut in vectorul de piese pionul..
+                    if ((p.getY() == j) && (p.getX() == col)) {//cu pozitia j = valoarea cu care am coborat pe linie si col
+                        p.setY(8 - lin);
+                        p.setX(col);
+                        b[8 - lin][col] = 10;
+                        b[j][col] = 0;
+                        i.enPassant = '-';
+                        break;
+                        //setez chestii in vector, in matrice, fac enPassant '-'
+                    }
+                }
+            }
+            if (j - (8 - lin + 1) == 2){// daca am coborat de 2 ori pe linie inseamna ca pionul s-a miscat 2 pozitii..
+                i.enPassant = it;//deci se poate face enPassant pe pion
+            }
+        }//schimb tura, cresc halfmove, cresc fullmove si opresc functia
+        i.turn = 'b';
+        i.halfmove++;
+        i.fullmove++;
+        return;
+    }
+
+    if (i.turn == 'b') {// lafel ca white doar ca in loc sa cobor pe linii urc.
+        for (int j = 8 - lin - 1; j > 0; j--) {
+            if (b[j][col] == 4) {
+                for (auto& p : pieces) {
+                    if ((p.getY() == j) && (p.getX() == col)) {
+                        p.setY(8 - lin);
+                        p.setX(col);
+                        b[8 - lin][col] = 4;
+                        b[j][col] = 0;
+                        i.enPassant = '-';
+                        break;
+                    }
+                }
+            }
+            if (j - (8 - lin - 1) == -2) {
+                i.enPassant = it;
+            }
+        }
+        i.turn = 'w';
+        i.halfmove++;
+        i.fullmove++;
+        return;
+    }
+}
+
 void listProcessing(vector<string> list) {
     for (auto& it : list) {
         vector<vector<int>> b;
@@ -442,6 +500,9 @@ void listProcessing(vector<string> list) {
         if (i.castling == "") {
             i.castling = "-";
         }
+        if (it.size() == 2) {
+            pawnMove(b, i, it);
+        }
 
         Position pos = Position(b, i);
         positions.push_back(pos);
@@ -473,7 +534,11 @@ int main() {
     vector<string> moves;
     moves.push_back("O-O");
     moves.push_back("O-O-O");
-
+    moves.push_back("e3");
+    moves.push_back("d6");
+    moves.push_back("a4");
+    moves.push_back("h5");
+    moves.push_back("e4");
 
     listProcessing(moves);
     Position lastPos = positions.at(positions.size() - 1);
