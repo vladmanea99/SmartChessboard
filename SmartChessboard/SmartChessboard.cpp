@@ -402,40 +402,35 @@ void queenSideCastling(vector<vector<int>> b, struct Info& i) {
     }
 }
 
-void pawnMove(vector<vector<int>> &b, struct Info& i, string it)
+void pawnMove(vector<vector<int>>& b, struct Info& i, string it)
 {
-    //a trebuie sa dau adresa matricei b, altfel nu mi le modifica.
-    //col = litera = numarul coloanei in matrice
-    //lin = cifra = numarul liniei in matrice
-    std::vector<char> v(it.begin(), it.end());
-    int col = int(v[0]) - 97;
-    int lin = v[1] - '0';
-    if (i.turn == 'w'){ // daca e tura albului..
-        for (int j = 8 - lin + 1; j < 8; j++) {//merg in JOS pe linii pana gasesc primul pion.Incep de la urmatoarea pozitie sub pion(8-i+1) ca sa nu faca 1 ciclu degeaba
-            if (b[j][col] == 10) {//l-am gasit
-                for (auto& p : pieces) {//caut in vectorul de piese pionul..
-                    if ((p.getY() == j) && (p.getX() == col)) {//cu pozitia j = valoarea cu care am coborat pe linie si col
+    int col = int(it[0]) - 97;
+    int lin = it[1] - '0';
+    if (i.turn == 'w'){
+        for (int j = 8 - lin + 1; j < 8; j++) {
+            if (b[j][col] == 10) {
+                for (auto& p : pieces) {
+                    if ((p.getY() == j) && (p.getX() == col)) {
                         p.setY(8 - lin);
                         p.setX(col);
                         b[8 - lin][col] = 10;
                         b[j][col] = 0;
                         i.enPassant = '-';
                         break;
-                        //setez chestii in vector, in matrice, fac enPassant '-'
                     }
                 }
             }
-            if (j - (8 - lin + 1) == 2){// daca am coborat de 2 ori pe linie inseamna ca pionul s-a miscat 2 pozitii..
-                i.enPassant = it;//deci se poate face enPassant pe pion
+            if (j - (8 - lin + 1) == 2){
+                i.enPassant = it;
             }
-        }//schimb tura, cresc halfmove, cresc fullmove si opresc functia
+        }
         i.turn = 'b';
         i.halfmove++;
         i.fullmove++;
         return;
     }
 
-    if (i.turn == 'b') {// lafel ca white doar ca in loc sa cobor pe linii urc.
+    if (i.turn == 'b') {
         for (int j = 8 - lin - 1; j > 0; j--) {
             if (b[j][col] == 4) {
                 for (auto& p : pieces) {
@@ -457,6 +452,437 @@ void pawnMove(vector<vector<int>> &b, struct Info& i, string it)
         i.halfmove++;
         i.fullmove++;
         return;
+    }
+}
+
+void updateCastling(int lin, int col, struct Info& i) {
+    size_t p;
+    if (i.turn == 'w') {
+        if (col == 0) {
+            p = i.castling.find("Q");
+        }
+        else if (col == 7) {
+            p = i.castling.find("K");
+        }
+    }
+    else if (i.turn == 'b') {
+        if (col == 0) {
+            p = i.castling.find("q");
+        }
+        else if (col == 7) {
+            p = i.castling.find("k");
+        }
+    }
+    i.castling.erase(p, 1);
+    if (i.castling == "") {
+        i.castling = "-";
+    }
+}
+
+void rookMove(vector<vector<int>>& b, struct Info& i, string it) {
+    int col = int(it[1]) - 97;
+    int lin = it[2] - '0';
+    int code = (i.turn == 'w') ? 12 : 6;
+
+    for (int j = 0; j < 8; j++) {
+        if (8 - lin + j < 8 && b[8 - lin + j][col] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin + j) && (p.getX() == col)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin + j][col] = 0;
+                    i.enPassant = '-';
+                    updateCastling(8 - lin + j, col, i);
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (8 - lin - j > -1 && b[8 - lin - j][col] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin - j) && (p.getX() == col)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin - j][col] = 0;
+                    i.enPassant = '-';
+                    updateCastling(8 - lin - j, col, i);
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (col + j < 8 && b[8 - lin][col + j] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin) && (p.getX() == col + j)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin][col + j] = 0;
+                    i.enPassant = '-';
+                    updateCastling(8 - lin, col + j, i);
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (col - j > -1 && b[8 - lin][col - j] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin) && (p.getX() == col - j)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin][col - j] = 0;
+                    i.enPassant = '-';
+                    updateCastling(8 - lin, col- j, i);
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+    }
+}
+
+void bishopMove(vector<vector<int>>& b, struct Info& i, string it) {
+    int col = int(it[1]) - 97;
+    int lin = it[2] - '0';
+    int code = (i.turn == 'w') ? 7 : 1;
+
+    for (int j = 0; j < 8; j++) {
+        if (8 - lin + j < 8 && col + j < 8 && b[8 - lin + j][col + j] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin + j) && (p.getX() == col + j)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin + j][col + j] = 0;
+                    i.enPassant = '-';
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (8 - lin - j > -1 && col + j < 8 && b[8 - lin - j][col + j] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin - j) && (p.getX() == col + j)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin - j][col + j] = 0;
+                    i.enPassant = '-';
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (8 - lin + j < 8 && col - j > -1 && b[8 - lin + j][col - j] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin + j) && (p.getX() == col - j)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin + j][col - j] = 0;
+                    i.enPassant = '-';
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (8 - lin - j > -1 && col - j > -1 && b[8 - lin - j][col - j] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin - j) && (p.getX() == col - j)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin - j][col - j] = 0;
+                    i.enPassant = '-';
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+    }
+}
+
+void queenMove(vector<vector<int>>& b, struct Info& i, string it) {
+    int col = int(it[1]) - 97;
+    int lin = it[2] - '0';
+    int code = (i.turn == 'w') ? 11 : 5;
+
+    for (int j = 0; j < 8; j++) {
+        if (8 - lin + j < 8 && col + j < 8 && b[8 - lin + j][col + j] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin + j) && (p.getX() == col + j)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin + j][col + j] = 0;
+                    i.enPassant = '-';
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (8 - lin - j > -1 && col + j < 8 && b[8 - lin - j][col + j] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin - j) && (p.getX() == col + j)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin - j][col + j] = 0;
+                    i.enPassant = '-';
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (8 - lin + j < 8 && col - j > -1 && b[8 - lin + j][col - j] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin + j) && (p.getX() == col - j)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin + j][col - j] = 0;
+                    i.enPassant = '-';
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (8 - lin - j > -1 && col - j > -1 && b[8 - lin - j][col - j] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin - j) && (p.getX() == col - j)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin - j][col - j] = 0;
+                    i.enPassant = '-';
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (8 - lin + j < 8 && b[8 - lin + j][col] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin + j) && (p.getX() == col)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin + j][col] = 0;
+                    i.enPassant = '-';
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (8 - lin - j > -1 && b[8 - lin - j][col] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin - j) && (p.getX() == col)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin - j][col] = 0;
+                    i.enPassant = '-';
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (col + j < 8 && b[8 - lin][col + j] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin) && (p.getX() == col + j)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin][col + j] = 0;
+                    i.enPassant = '-';
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+        if (col - j > -1 && b[8 - lin][col - j] == code) {
+            for (auto& p : pieces) {
+                if ((p.getY() == 8 - lin) && (p.getX() == col - j)) {
+                    p.setY(8 - lin);
+                    p.setX(col);
+                    b[8 - lin][col] = code;
+                    b[8 - lin][col - j] = 0;
+                    i.enPassant = '-';
+                    i.turn = (i.turn == 'w') ? 'b' : 'w';
+                    i.halfmove++;
+                    i.fullmove++;
+                    return;
+                }
+            }
+        }
+    }
+}
+
+void kingMove(vector<vector<int>>& b, struct Info& i, string it) {
+    int col = int(it[1]) - 97;
+    int lin = it[2] - '0';
+    int code = (i.turn == 'w') ? 8 : 2;
+    int j = 1;
+
+    if (8 - lin + j < 8 && col + j < 8 && b[8 - lin + j][col + j] == code) {
+        for (auto& p : pieces) {
+            if ((p.getY() == 8 - lin + j) && (p.getX() == col + j)) {
+                p.setY(8 - lin);
+                p.setX(col);
+                b[8 - lin][col] = code;
+                b[8 - lin + j][col + j] = 0;
+                i.enPassant = '-';
+                i.castling = '-';
+                i.turn = (i.turn == 'w') ? 'b' : 'w';
+                i.halfmove++;
+                i.fullmove++;
+                return;
+            }
+        }
+    }
+    if (8 - lin - j > -1 && col + j < 8 && b[8 - lin - j][col + j] == code) {
+        for (auto& p : pieces) {
+            if ((p.getY() == 8 - lin - j) && (p.getX() == col + j)) {
+                p.setY(8 - lin);
+                p.setX(col);
+                b[8 - lin][col] = code;
+                b[8 - lin - j][col + j] = 0;
+                i.enPassant = '-';
+                i.castling = '-';
+                i.turn = (i.turn == 'w') ? 'b' : 'w';
+                i.halfmove++;
+                i.fullmove++;
+                return;
+            }
+        }
+    }
+    if (8 - lin + j < 8 && col - j > -1 && b[8 - lin + j][col - j] == code) {
+        for (auto& p : pieces) {
+            if ((p.getY() == 8 - lin + j) && (p.getX() == col - j)) {
+                p.setY(8 - lin);
+                p.setX(col);
+                b[8 - lin][col] = code;
+                b[8 - lin + j][col - j] = 0;
+                i.enPassant = '-';
+                i.castling = '-';
+                i.turn = (i.turn == 'w') ? 'b' : 'w';
+                i.halfmove++;
+                i.fullmove++;
+                return;
+            }
+        }
+    }
+    if (8 - lin - j > -1 && col - j > -1 && b[8 - lin - j][col - j] == code) {
+        for (auto& p : pieces) {
+            if ((p.getY() == 8 - lin - j) && (p.getX() == col - j)) {
+                p.setY(8 - lin);
+                p.setX(col);
+                b[8 - lin][col] = code;
+                b[8 - lin - j][col - j] = 0;
+                i.enPassant = '-';
+                i.castling = '-';
+                i.turn = (i.turn == 'w') ? 'b' : 'w';
+                i.halfmove++;
+                i.fullmove++;
+                return;
+            }
+        }
+    }
+    if (8 - lin + j < 8 && b[8 - lin + j][col] == code) {
+        for (auto& p : pieces) {
+            if ((p.getY() == 8 - lin + j) && (p.getX() == col)) {
+                p.setY(8 - lin);
+                p.setX(col);
+                b[8 - lin][col] = code;
+                b[8 - lin + j][col] = 0;
+                i.enPassant = '-';
+                i.castling = '-';
+                i.turn = (i.turn == 'w') ? 'b' : 'w';
+                i.halfmove++;
+                i.fullmove++;
+                return;
+            }
+        }
+    }
+    if (8 - lin - j > -1 && b[8 - lin - j][col] == code) {
+        for (auto& p : pieces) {
+            if ((p.getY() == 8 - lin - j) && (p.getX() == col)) {
+                p.setY(8 - lin);
+                p.setX(col);
+                b[8 - lin][col] = code;
+                b[8 - lin - j][col] = 0;
+                i.enPassant = '-';
+                i.castling = '-';
+                i.turn = (i.turn == 'w') ? 'b' : 'w';
+                i.halfmove++;
+                i.fullmove++;
+                return;
+            }
+        }
+    }
+    if (col + j < 8 && b[8 - lin][col + j] == code) {
+        for (auto& p : pieces) {
+            if ((p.getY() == 8 - lin) && (p.getX() == col + j)) {
+                p.setY(8 - lin);
+                p.setX(col);
+                b[8 - lin][col] = code;
+                b[8 - lin][col + j] = 0;
+                i.enPassant = '-';
+                i.castling = '-';
+                i.turn = (i.turn == 'w') ? 'b' : 'w';
+                i.halfmove++;
+                i.fullmove++;
+                return;
+            }
+        }
+    }
+    if (col - j > -1 && b[8 - lin][col - j] == code) {
+        for (auto& p : pieces) {
+            if ((p.getY() == 8 - lin) && (p.getX() == col - j)) {
+                p.setY(8 - lin);
+                p.setX(col);
+                b[8 - lin][col] = code;
+                b[8 - lin][col - j] = 0;
+                i.enPassant = '-';
+                i.castling = '-';
+                i.turn = (i.turn == 'w') ? 'b' : 'w';
+                i.halfmove++;
+                i.fullmove++;
+                return;
+            }
+        }
     }
 }
 
@@ -497,11 +923,34 @@ void listProcessing(vector<string> list) {
         else if (it == "O-O-O") {
             queenSideCastling(b, i);
         }
+        else if (it.size() == 2) {
+            pawnMove(b, i, it);
+        }
+        else if (it.size() == 3) {
+            if (it[it.size() - 1] == '+') {
+                pawnMove(b, i, it);
+            }
+            else if (it == "1-0" || it == "0-1") {
+                cout << "Meciul s-a terminat.";
+            }
+            else {
+                if (it[0] == 'R') {
+                    rookMove(b, i, it);
+                }
+                else if (it[0] == 'B') {
+                    bishopMove(b, i, it);
+                }
+                else if (it[0] == 'Q') {
+                    queenMove(b, i, it);
+                }
+                else if (it[0] == 'K') {
+                    kingMove(b, i, it);
+                }
+            }
+        }
+
         if (i.castling == "") {
             i.castling = "-";
-        }
-        if (it.size() == 2) {
-            pawnMove(b, i, it);
         }
 
         Position pos = Position(b, i);
@@ -532,13 +981,14 @@ int main() {
     // processFENstring(FEN, piecesMat, FENPieces, FENInfo);
     
     vector<string> moves;
-    moves.push_back("O-O");
-    moves.push_back("O-O-O");
-    moves.push_back("e3");
-    moves.push_back("d6");
+    moves.push_back("b3");
+    moves.push_back("b6");
+    moves.push_back("Bb2");
+    moves.push_back("Bb7");
     moves.push_back("a4");
-    moves.push_back("h5");
-    moves.push_back("e4");
+    moves.push_back("a6");
+    moves.push_back("Ra3");
+    moves.push_back("Ra7");
 
     listProcessing(moves);
     Position lastPos = positions.at(positions.size() - 1);
