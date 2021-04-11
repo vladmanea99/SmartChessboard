@@ -235,18 +235,18 @@ void initializeMap(map<int, string> &map) {
 }
 
 void initializePiecesNamesMap(map<char, int>& map) {
-    map.insert({ 'b', 0 });
-    map.insert({ 'k', 1 });
-    map.insert({ 'n', 2 });
-    map.insert({ 'p', 3 });
-    map.insert({ 'q', 4 });
-    map.insert({ 'r', 5 });
-    map.insert({ 'B', 6 });
-    map.insert({ 'K', 7 });
-    map.insert({ 'N', 8 });
-    map.insert({ 'P', 9 });
-    map.insert({ 'Q', 10 });
-    map.insert({ 'R', 11 });
+    map.insert({ 'b', 1 });
+    map.insert({ 'k', 2 });
+    map.insert({ 'n', 3 });
+    map.insert({ 'p', 4 });
+    map.insert({ 'q', 5 });
+    map.insert({ 'r', 6 });
+    map.insert({ 'B', 7 });
+    map.insert({ 'K', 8 });
+    map.insert({ 'N', 9 });
+    map.insert({ 'P', 10 });
+    map.insert({ 'Q', 11 });
+    map.insert({ 'R', 12 });
 }
 
 void getFENstring(string &str) {
@@ -402,25 +402,123 @@ void queenSideCastling(vector<vector<int>> b, struct Info& i) {
     }
 }
 
-void pawnMove(vector<vector<int>>& b, struct Info& i, string it)
+void updateCastlingRook(int lin, int col, struct Info& i) {
+    size_t p = string::npos;
+    if (i.turn == 'w') {
+        if (col == 0) {
+            p = i.castling.find("Q");
+        }
+        else if (col == 7) {
+            p = i.castling.find("K");
+        }
+    }
+    else if (i.turn == 'b') {
+        if (col == 0) {
+            p = i.castling.find("q");
+        }
+        else if (col == 7) {
+            p = i.castling.find("k");
+        }
+    }
+    if (p != string::npos) {
+        i.castling.erase(p, 1);
+    }
+    if (i.castling == "") {
+        i.castling = "-";
+    }
+}
+
+void updateCastlingKing(int lin, int col, struct Info& i) {
+    size_t p = string::npos;
+    if (i.turn == 'w') {
+        p = i.castling.find("KQ");
+    }
+    else if (i.turn == 'b') {
+        p = i.castling.find("kq");
+    }
+    if (p != string::npos) {
+        i.castling.erase(p, 2);
+    }
+    if (i.castling == "") {
+        i.castling = "-";
+    }
+}
+
+void searchPieceInVector(int lin, int col, int x, int y, int code, vector<vector<int>>& b, struct Info& i) {
+    for (auto& p : pieces) {
+        if ((p.getY() == x) && (p.getX() == y)) {
+            p.setY(8 - lin);
+            p.setX(col);
+            b[8 - lin][col] = code;
+            b[x][y] = 0;
+            i.enPassant = '-';
+            if (code == 12 || code == 6) {
+                updateCastlingRook(x, y, i);
+            }
+            if (code == 8 || code == 2) {
+                updateCastlingKing(x, y, i);
+            }
+            i.turn = (i.turn == 'w') ? 'b' : 'w';
+            i.halfmove++;
+            i.fullmove++;
+            return;
+        }
+    }
+}
+
+boolean searchLineOrColumn(int lin, int col, int line, int column, int code, vector<vector<int>>& b, struct Info& i) {
+    if (column > -1) {
+        for (int j = 0; j < 8; j++) {
+            if (8 - lin + j < 8 && b[8 - lin + j][column] == code) {
+                searchPieceInVector(lin, col, 8 - lin + j, column, code, b, i);
+                return true;
+            }
+            if (8 - lin - j > -1 && b[8 - lin - j][column] == code) {
+                searchPieceInVector(lin, col, 8 - lin - j, column, code, b, i);
+                return true;
+            }
+        }
+    }
+    else if (line > -1) {
+        for (int j = 0; j < 8; j++) {
+            if (col + j < 8 && b[8 - line][col + j] == code) {
+                searchPieceInVector(lin, col, 8 - line, col + j, code, b, i);
+                return true;
+            }
+            if (col - j > -1 && b[8 - line][col - j] == code) {
+                searchPieceInVector(lin, col, 8 - line, col - j, code, b, i);
+                return true;
+            }
+        }
+    }
+    else return false;
+}
+
+void pawnMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, int c = -1, char piece = 'a')
 {
     int col = int(it[0]) - 97;
     int lin = it[1] - '0';
-    if (i.turn == 'w'){
+    int code = (i.turn == 'w') ? 10 : 4;
+
+    if (searchLineOrColumn(lin, col, l, c, code, b, i)) {
+        return;
+    }
+
+    if (i.turn == 'w') {
         for (int j = 8 - lin + 1; j < 8; j++) {
             if (b[j][col] == 10) {
                 for (auto& p : pieces) {
                     if ((p.getY() == j) && (p.getX() == col)) {
                         p.setY(8 - lin);
                         p.setX(col);
-                        b[8 - lin][col] = 10;
+                        b[8 - lin][col] = (piece != 'a') ? piecesNamesMap[piece] : 10;
                         b[j][col] = 0;
                         i.enPassant = '-';
                         break;
                     }
                 }
             }
-            if (j - (8 - lin + 1) == 2){
+            if (j - (8 - lin + 1) == 2) {
                 i.enPassant = it;
             }
         }
@@ -437,7 +535,7 @@ void pawnMove(vector<vector<int>>& b, struct Info& i, string it)
                     if ((p.getY() == j) && (p.getX() == col)) {
                         p.setY(8 - lin);
                         p.setX(col);
-                        b[8 - lin][col] = 4;
+                        b[8 - lin][col] = (piece != 'a') ? piecesNamesMap[tolower(piece)] : 4;
                         b[j][col] = 0;
                         i.enPassant = '-';
                         break;
@@ -455,297 +553,105 @@ void pawnMove(vector<vector<int>>& b, struct Info& i, string it)
     }
 }
 
-void updateCastling(int lin, int col, struct Info& i) {
-    size_t p;
-    if (i.turn == 'w') {
-        if (col == 0) {
-            p = i.castling.find("Q");
-        }
-        else if (col == 7) {
-            p = i.castling.find("K");
-        }
-    }
-    else if (i.turn == 'b') {
-        if (col == 0) {
-            p = i.castling.find("q");
-        }
-        else if (col == 7) {
-            p = i.castling.find("k");
-        }
-    }
-    i.castling.erase(p, 1);
-    if (i.castling == "") {
-        i.castling = "-";
-    }
-}
-
-void rookMove(vector<vector<int>>& b, struct Info& i, string it) {
+void rookMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, int c = -1) {
     int col = int(it[1]) - 97;
     int lin = it[2] - '0';
     int code = (i.turn == 'w') ? 12 : 6;
 
+    if (searchLineOrColumn(lin, col, l, c, code, b, i)) {
+        return;
+    }
+
     for (int j = 0; j < 8; j++) {
         if (8 - lin + j < 8 && b[8 - lin + j][col] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin + j) && (p.getX() == col)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin + j][col] = 0;
-                    i.enPassant = '-';
-                    updateCastling(8 - lin + j, col, i);
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
+            searchPieceInVector(lin, col, 8 - lin + j, col, code, b, i);
+            return;
         }
         if (8 - lin - j > -1 && b[8 - lin - j][col] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin - j) && (p.getX() == col)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin - j][col] = 0;
-                    i.enPassant = '-';
-                    updateCastling(8 - lin - j, col, i);
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
+            searchPieceInVector(lin, col, 8 - lin - j, col, code, b, i);
+            return;
         }
         if (col + j < 8 && b[8 - lin][col + j] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin) && (p.getX() == col + j)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin][col + j] = 0;
-                    i.enPassant = '-';
-                    updateCastling(8 - lin, col + j, i);
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
+            searchPieceInVector(lin, col, 8 - lin, col + j, code, b, i);
+            return;
         }
         if (col - j > -1 && b[8 - lin][col - j] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin) && (p.getX() == col - j)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin][col - j] = 0;
-                    i.enPassant = '-';
-                    updateCastling(8 - lin, col- j, i);
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
+            searchPieceInVector(lin, col, 8 - lin, col - j, code, b, i);
+            return;
         }
     }
 }
 
-void bishopMove(vector<vector<int>>& b, struct Info& i, string it) {
+void bishopMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, int c = -1) {
     int col = int(it[1]) - 97;
     int lin = it[2] - '0';
     int code = (i.turn == 'w') ? 7 : 1;
 
+    if (searchLineOrColumn(lin, col, l, c, code, b, i)) {
+        return;
+    }
+
     for (int j = 0; j < 8; j++) {
         if (8 - lin + j < 8 && col + j < 8 && b[8 - lin + j][col + j] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin + j) && (p.getX() == col + j)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin + j][col + j] = 0;
-                    i.enPassant = '-';
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
+            searchPieceInVector(lin, col, 8 - lin + j, col + j, code, b, i);
+            return;
         }
         if (8 - lin - j > -1 && col + j < 8 && b[8 - lin - j][col + j] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin - j) && (p.getX() == col + j)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin - j][col + j] = 0;
-                    i.enPassant = '-';
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
+            searchPieceInVector(lin, col, 8 - lin - j, col + j, code, b, i);
+            return;
         }
         if (8 - lin + j < 8 && col - j > -1 && b[8 - lin + j][col - j] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin + j) && (p.getX() == col - j)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin + j][col - j] = 0;
-                    i.enPassant = '-';
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
+            searchPieceInVector(lin, col, 8 - lin + j, col - j, code, b, i);
+            return;
         }
         if (8 - lin - j > -1 && col - j > -1 && b[8 - lin - j][col - j] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin - j) && (p.getX() == col - j)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin - j][col - j] = 0;
-                    i.enPassant = '-';
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
+            searchPieceInVector(lin, col, 8 - lin - j, col - j, code, b, i);
+            return;
         }
     }
 }
 
-void queenMove(vector<vector<int>>& b, struct Info& i, string it) {
+void queenMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, int c = -1) {
     int col = int(it[1]) - 97;
     int lin = it[2] - '0';
     int code = (i.turn == 'w') ? 11 : 5;
 
+    if (searchLineOrColumn(lin, col, l, c, code, b, i)) {
+        return;
+    }
+
     for (int j = 0; j < 8; j++) {
-        if (8 - lin + j < 8 && col + j < 8 && b[8 - lin + j][col + j] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin + j) && (p.getX() == col + j)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin + j][col + j] = 0;
-                    i.enPassant = '-';
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
-        }
-        if (8 - lin - j > -1 && col + j < 8 && b[8 - lin - j][col + j] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin - j) && (p.getX() == col + j)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin - j][col + j] = 0;
-                    i.enPassant = '-';
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
-        }
-        if (8 - lin + j < 8 && col - j > -1 && b[8 - lin + j][col - j] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin + j) && (p.getX() == col - j)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin + j][col - j] = 0;
-                    i.enPassant = '-';
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
-        }
-        if (8 - lin - j > -1 && col - j > -1 && b[8 - lin - j][col - j] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin - j) && (p.getX() == col - j)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin - j][col - j] = 0;
-                    i.enPassant = '-';
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
-        }
         if (8 - lin + j < 8 && b[8 - lin + j][col] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin + j) && (p.getX() == col)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin + j][col] = 0;
-                    i.enPassant = '-';
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
+            searchPieceInVector(lin, col, 8 - lin + j, col, code, b, i);
+            return;
         }
         if (8 - lin - j > -1 && b[8 - lin - j][col] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin - j) && (p.getX() == col)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin - j][col] = 0;
-                    i.enPassant = '-';
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
+            searchPieceInVector(lin, col, 8 - lin - j, col, code, b, i);
+            return;
         }
         if (col + j < 8 && b[8 - lin][col + j] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin) && (p.getX() == col + j)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin][col + j] = 0;
-                    i.enPassant = '-';
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
+            searchPieceInVector(lin, col, 8 - lin, col + j, code, b, i);
+            return;
         }
         if (col - j > -1 && b[8 - lin][col - j] == code) {
-            for (auto& p : pieces) {
-                if ((p.getY() == 8 - lin) && (p.getX() == col - j)) {
-                    p.setY(8 - lin);
-                    p.setX(col);
-                    b[8 - lin][col] = code;
-                    b[8 - lin][col - j] = 0;
-                    i.enPassant = '-';
-                    i.turn = (i.turn == 'w') ? 'b' : 'w';
-                    i.halfmove++;
-                    i.fullmove++;
-                    return;
-                }
-            }
+            searchPieceInVector(lin, col, 8 - lin, col - j, code, b, i);
+            return;
+        }
+        if (8 - lin + j < 8 && col + j < 8 && b[8 - lin + j][col + j] == code) {
+            searchPieceInVector(lin, col, 8 - lin + j, col + j, code, b, i);
+            return;
+        }
+        if (8 - lin - j > -1 && col + j < 8 && b[8 - lin - j][col + j] == code) {
+            searchPieceInVector(lin, col, 8 - lin - j, col + j, code, b, i);
+            return;
+        }
+        if (8 - lin + j < 8 && col - j > -1 && b[8 - lin + j][col - j] == code) {
+            searchPieceInVector(lin, col, 8 - lin + j, col - j, code, b, i);
+            return;
+        }
+        if (8 - lin - j > -1 && col - j > -1 && b[8 - lin - j][col - j] == code) {
+            searchPieceInVector(lin, col, 8 - lin - j, col - j, code, b, i);
+            return;
         }
     }
 }
@@ -756,133 +662,102 @@ void kingMove(vector<vector<int>>& b, struct Info& i, string it) {
     int code = (i.turn == 'w') ? 8 : 2;
     int j = 1;
 
-    if (8 - lin + j < 8 && col + j < 8 && b[8 - lin + j][col + j] == code) {
-        for (auto& p : pieces) {
-            if ((p.getY() == 8 - lin + j) && (p.getX() == col + j)) {
-                p.setY(8 - lin);
-                p.setX(col);
-                b[8 - lin][col] = code;
-                b[8 - lin + j][col + j] = 0;
-                i.enPassant = '-';
-                i.castling = '-';
-                i.turn = (i.turn == 'w') ? 'b' : 'w';
-                i.halfmove++;
-                i.fullmove++;
-                return;
-            }
-        }
-    }
-    if (8 - lin - j > -1 && col + j < 8 && b[8 - lin - j][col + j] == code) {
-        for (auto& p : pieces) {
-            if ((p.getY() == 8 - lin - j) && (p.getX() == col + j)) {
-                p.setY(8 - lin);
-                p.setX(col);
-                b[8 - lin][col] = code;
-                b[8 - lin - j][col + j] = 0;
-                i.enPassant = '-';
-                i.castling = '-';
-                i.turn = (i.turn == 'w') ? 'b' : 'w';
-                i.halfmove++;
-                i.fullmove++;
-                return;
-            }
-        }
-    }
-    if (8 - lin + j < 8 && col - j > -1 && b[8 - lin + j][col - j] == code) {
-        for (auto& p : pieces) {
-            if ((p.getY() == 8 - lin + j) && (p.getX() == col - j)) {
-                p.setY(8 - lin);
-                p.setX(col);
-                b[8 - lin][col] = code;
-                b[8 - lin + j][col - j] = 0;
-                i.enPassant = '-';
-                i.castling = '-';
-                i.turn = (i.turn == 'w') ? 'b' : 'w';
-                i.halfmove++;
-                i.fullmove++;
-                return;
-            }
-        }
-    }
-    if (8 - lin - j > -1 && col - j > -1 && b[8 - lin - j][col - j] == code) {
-        for (auto& p : pieces) {
-            if ((p.getY() == 8 - lin - j) && (p.getX() == col - j)) {
-                p.setY(8 - lin);
-                p.setX(col);
-                b[8 - lin][col] = code;
-                b[8 - lin - j][col - j] = 0;
-                i.enPassant = '-';
-                i.castling = '-';
-                i.turn = (i.turn == 'w') ? 'b' : 'w';
-                i.halfmove++;
-                i.fullmove++;
-                return;
-            }
-        }
-    }
     if (8 - lin + j < 8 && b[8 - lin + j][col] == code) {
-        for (auto& p : pieces) {
-            if ((p.getY() == 8 - lin + j) && (p.getX() == col)) {
-                p.setY(8 - lin);
-                p.setX(col);
-                b[8 - lin][col] = code;
-                b[8 - lin + j][col] = 0;
-                i.enPassant = '-';
-                i.castling = '-';
-                i.turn = (i.turn == 'w') ? 'b' : 'w';
-                i.halfmove++;
-                i.fullmove++;
-                return;
-            }
-        }
+        searchPieceInVector(lin, col, 8 - lin + j, col, code, b, i);
+        return;
     }
     if (8 - lin - j > -1 && b[8 - lin - j][col] == code) {
-        for (auto& p : pieces) {
-            if ((p.getY() == 8 - lin - j) && (p.getX() == col)) {
-                p.setY(8 - lin);
-                p.setX(col);
-                b[8 - lin][col] = code;
-                b[8 - lin - j][col] = 0;
-                i.enPassant = '-';
-                i.castling = '-';
-                i.turn = (i.turn == 'w') ? 'b' : 'w';
-                i.halfmove++;
-                i.fullmove++;
-                return;
-            }
-        }
+        searchPieceInVector(lin, col, 8 - lin - j, col, code, b, i);
+        return;
     }
     if (col + j < 8 && b[8 - lin][col + j] == code) {
-        for (auto& p : pieces) {
-            if ((p.getY() == 8 - lin) && (p.getX() == col + j)) {
-                p.setY(8 - lin);
-                p.setX(col);
-                b[8 - lin][col] = code;
-                b[8 - lin][col + j] = 0;
-                i.enPassant = '-';
-                i.castling = '-';
-                i.turn = (i.turn == 'w') ? 'b' : 'w';
-                i.halfmove++;
-                i.fullmove++;
+        searchPieceInVector(lin, col, 8 - lin, col + j, code, b, i);
+        return;
+    }
+    if (col - j > -1 && b[8 - lin][col - j] == code) {
+        searchPieceInVector(lin, col, 8 - lin, col - j, code, b, i);
+        return;
+    }
+    if (8 - lin + j < 8 && col + j < 8 && b[8 - lin + j][col + j] == code) {
+        searchPieceInVector(lin, col, 8 - lin + j, col + j, code, b, i);
+        return;
+    }
+    if (8 - lin - j > -1 && col + j < 8 && b[8 - lin - j][col + j] == code) {
+        searchPieceInVector(lin, col, 8 - lin - j, col + j, code, b, i);
+        return;
+    }
+    if (8 - lin + j < 8 && col - j > -1 && b[8 - lin + j][col - j] == code) {
+        searchPieceInVector(lin, col, 8 - lin + j, col - j, code, b, i);
+        return;
+    }
+    if (8 - lin - j > -1 && col - j > -1 && b[8 - lin - j][col - j] == code) {
+        searchPieceInVector(lin, col, 8 - lin - j, col - j, code, b, i);
+        return;
+    }
+}
+
+void knightMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, int c = -1) {
+    int col = int(it[1]) - 97;
+    int lin = it[2] - '0';
+    int code = (i.turn == 'w') ? 9 : 3;
+
+    if (searchLineOrColumn(lin, col, l, c, code, b, i)) {
+        return;
+    }
+
+    for (int j = col - 2; j <= col + 2; j++) {
+        if (j > -1 && j < 8 && j != col) {
+            if (8 - lin - 2 > -1 && 8 - lin - 2 < 8 && b[8 - lin - 2][j] == code) {
+                searchPieceInVector(lin, col, 8 - lin - 2, j, code, b, i);
+                return;
+            }
+            if (8 - lin + 2 > -1 && 8 - lin + 2 < 8 && b[8 - lin + 2][j] == code) {
+                searchPieceInVector(lin, col, 8 - lin + 2, j, code, b, i);
+                return;
+            }
+            if (8 - lin - 1 > -1 && 8 - lin - 2 < 8 && b[8 - lin - 1][j] == code) {
+                searchPieceInVector(lin, col, 8 - lin - 1, j, code, b, i);
+                return;
+            }
+            if (8 - lin + 1 > -1 && 8 - lin + 1 < 8 && b[8 - lin + 1][j] == code) {
+                searchPieceInVector(lin, col, 8 - lin + 1, j, code, b, i);
                 return;
             }
         }
     }
-    if (col - j > -1 && b[8 - lin][col - j] == code) {
+}
+
+void pawnTakes(vector<vector<int>>& b, struct Info& i, string it) {
+    int col = -1, lin = -1;
+    if (isalpha(it[0]) && islower(it[0])) {  // se precizeaza de pe ce coloana provine pionul care ia piesa
+        col = int(it[0]) - 97;
+        it = it.substr(2, 2);  // tai din mutare coloana precizata si caracterul 'x'
+        // sterg din vectorul de piese piesa care va fi luata
+        int index = 0;
+        int c = int(it[0]) - 97;
+        int l = it[1] - '0';
         for (auto& p : pieces) {
-            if ((p.getY() == 8 - lin) && (p.getX() == col - j)) {
-                p.setY(8 - lin);
-                p.setX(col);
-                b[8 - lin][col] = code;
-                b[8 - lin][col - j] = 0;
-                i.enPassant = '-';
-                i.castling = '-';
-                i.turn = (i.turn == 'w') ? 'b' : 'w';
-                i.halfmove++;
-                i.fullmove++;
-                return;
+            if (p.getX() == c && p.getY() == 8 - l) {
+                pieces.erase(pieces.begin() + index);
             }
+            index++;
         }
+        pawnMove(b, i, it, lin, col);
+    }
+    else if (isdigit(it[0])) {  // se precizeaza de pe ce linie provine pionul care ia piesa
+        lin = it[0] - '0';
+        it = it.substr(2, 2);  // tai din mutare linia precizata si caracterul 'x'
+        // sterg din vectorul de piese piesa care va fi luata
+        int index = 0;
+        int c = int(it[0]) - 97;
+        int l = it[1] - '0';
+        for (auto& p : pieces) {
+            if (p.getX() == c && p.getY() == 8 - l) {
+                pieces.erase(pieces.begin() + index);
+            }
+            index++;
+        }
+        pawnMove(b, i, it, lin, col);
     }
 }
 
@@ -946,6 +821,51 @@ void listProcessing(vector<string> list) {
                 else if (it[0] == 'K') {
                     kingMove(b, i, it);
                 }
+                else if (it[0] = 'N') {
+                    knightMove(b, i, it);
+                }
+            }
+        }
+        else if (it.size() == 4) {
+            if (it[1] == 'x') {
+                if (isalpha(it[0]) && isupper(it[0])) {
+                    // Orice alta piesa in afara de pion ia alta piesa
+                }
+                else {
+                    pawnTakes(b, i, it);
+                }
+            }
+            else if (it[2] == '=') {
+                pawnMove(b, i, it, it[3]);
+            }
+            else if (it[it.size() - 1] == '+') {
+                // O piesa a pus regele in sah
+            }
+            else {
+                int col = -1, lin = -1;
+                if (isdigit(it[1])) {
+                    lin = it[1] - '0';
+                }
+                else if(isalpha(it[1])) {
+                    col = int(it[1]) - 97;
+                }
+
+                if (it[0] == 'R') {
+                    it = it.substr(1, 3);
+                    rookMove(b, i, it, lin, col);
+                }
+                else if (it[0] == 'B') {
+                    it = it.substr(1, 3);
+                    bishopMove(b, i, it, lin, col);
+                }
+                else if (it[0] == 'Q') {
+                    it = it.substr(1, 3);
+                    queenMove(b, i, it, lin, col);
+                }
+                else if (it[0] = 'N') {
+                    it = it.substr(1, 3);
+                    knightMove(b, i, it, lin, col);
+                }
             }
         }
 
@@ -981,19 +901,19 @@ int main() {
     // processFENstring(FEN, piecesMat, FENPieces, FENInfo);
     
     vector<string> moves;
-    moves.push_back("b3");
-    moves.push_back("b6");
-    moves.push_back("Bb2");
-    moves.push_back("Bb7");
-    moves.push_back("a4");
-    moves.push_back("a6");
-    moves.push_back("Ra3");
+    moves.push_back("b4");
+    moves.push_back("a5");
+    moves.push_back("bxa5");
     moves.push_back("Ra7");
+    moves.push_back("a3");
+    moves.push_back("Ra6");
+    moves.push_back("h3");
+    moves.push_back("Rh6");
+    //moves.push_back("a8=B");
 
     listProcessing(moves);
     Position lastPos = positions.at(positions.size() - 1);
     vector<vector<int>> b = positions.at(positions.size() - 1).getBoard();
-    cout << lastPos.getInfo().castling;
     
     while (window.isOpen())
     {
