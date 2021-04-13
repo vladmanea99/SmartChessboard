@@ -402,21 +402,21 @@ void queenSideCastling(vector<vector<int>> b, struct Info& i) {
     }
 }
 
-void updateCastlingRook(int lin, int col, struct Info& i) {
+void updateCastlingRook(int endingLine, int endingColumn, struct Info& i) {
     size_t p = string::npos;
     if (i.turn == 'w') {
-        if (col == 0) {
+        if (endingColumn == 0) {
             p = i.castling.find("Q");
         }
-        else if (col == 7) {
+        else if (endingColumn == 7) {
             p = i.castling.find("K");
         }
     }
     else if (i.turn == 'b') {
-        if (col == 0) {
+        if (endingColumn == 0) {
             p = i.castling.find("q");
         }
-        else if (col == 7) {
+        else if (endingColumn == 7) {
             p = i.castling.find("k");
         }
     }
@@ -428,7 +428,7 @@ void updateCastlingRook(int lin, int col, struct Info& i) {
     }
 }
 
-void updateCastlingKing(int lin, int col, struct Info& i) {
+void updateCastlingKing(int endingLine, int endingColumn, struct Info& i) {
     size_t p = string::npos;
     if (i.turn == 'w') {
         p = i.castling.find("KQ");
@@ -444,19 +444,19 @@ void updateCastlingKing(int lin, int col, struct Info& i) {
     }
 }
 
-void searchPieceInVector(int lin, int col, int x, int y, int code, vector<vector<int>>& b, struct Info& i) {
+void searchPieceInVector(int endingLine, int endingColumn, int startingLine, int startingColumn, int code, vector<vector<int>>& b, struct Info& i) {
     for (auto& p : pieces) {
-        if ((p.getY() == x) && (p.getX() == y)) {
-            p.setY(8 - lin);
-            p.setX(col);
-            b[8 - lin][col] = code;
-            b[x][y] = 0;
+        if ((p.getY() == startingLine) && (p.getX() == startingColumn)) {
+            p.setY(8 - endingLine);
+            p.setX(endingColumn);
+            b[8 - endingLine][endingColumn] = code;
+            b[startingLine][startingColumn] = 0;
             i.enPassant = '-';
             if (code == 12 || code == 6) {
-                updateCastlingRook(x, y, i);
+                updateCastlingRook(startingLine, startingColumn, i);
             }
             if (code == 8 || code == 2) {
-                updateCastlingKing(x, y, i);
+                updateCastlingKing(startingLine, startingColumn, i);
             }
             i.turn = (i.turn == 'w') ? 'b' : 'w';
             i.halfmove++;
@@ -466,27 +466,27 @@ void searchPieceInVector(int lin, int col, int x, int y, int code, vector<vector
     }
 }
 
-boolean searchLineOrColumn(int lin, int col, int line, int column, int code, vector<vector<int>>& b, struct Info& i) {
-    if (column > -1) {
+boolean searchLineOrColumn(int endingLine, int endingColumn, int startingLine, int startingColumn, int code, vector<vector<int>>& b, struct Info& i) {
+    if (startingColumn > -1) {
         for (int j = 0; j < 8; j++) {
-            if (8 - lin + j < 8 && b[8 - lin + j][column] == code) {
-                searchPieceInVector(lin, col, 8 - lin + j, column, code, b, i);
+            if (8 - endingLine + j < 8 && b[8 - endingLine + j][startingColumn] == code) {
+                searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, startingColumn, code, b, i);
                 return true;
             }
-            if (8 - lin - j > -1 && b[8 - lin - j][column] == code) {
-                searchPieceInVector(lin, col, 8 - lin - j, column, code, b, i);
+            if (8 - endingLine - j > -1 && b[8 - endingLine - j][startingColumn] == code) {
+                searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, startingColumn, code, b, i);
                 return true;
             }
         }
     }
-    else if (line > -1) {
+    else if (startingLine > -1) {
         for (int j = 0; j < 8; j++) {
-            if (col + j < 8 && b[8 - line][col + j] == code) {
-                searchPieceInVector(lin, col, 8 - line, col + j, code, b, i);
+            if (endingColumn + j < 8 && b[8 - startingLine][endingColumn + j] == code) {
+                searchPieceInVector(endingLine, endingColumn, 8 - startingLine, endingColumn + j, code, b, i);
                 return true;
             }
-            if (col - j > -1 && b[8 - line][col - j] == code) {
-                searchPieceInVector(lin, col, 8 - line, col - j, code, b, i);
+            if (endingColumn - j > -1 && b[8 - startingLine][endingColumn - j] == code) {
+                searchPieceInVector(endingLine, endingColumn, 8 - startingLine, endingColumn - j, code, b, i);
                 return true;
             }
         }
@@ -494,31 +494,59 @@ boolean searchLineOrColumn(int lin, int col, int line, int column, int code, vec
     else return false;
 }
 
-void pawnMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, int c = -1, char piece = 'a')
+boolean searchLine(int endingLine, int endingColumn, int startingLine, int code, vector<vector<int>>& b, struct Info& i) {
+    for (int j = 0; j < 8; j++) {
+        if (endingColumn + j < 8 && b[8 - startingLine][endingColumn + j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - startingLine, endingColumn + j, code, b, i);
+            return true;
+        }
+        if (endingColumn - j > -1 && b[8 - startingLine][endingColumn - j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - startingLine, endingColumn - j, code, b, i);
+            return true;
+        }
+    }
+    return false;
+}
+
+boolean searchColumn(int endingLine, int endingColumn, int startingColumn, int code, vector<vector<int>>& b, struct Info& i) {
+    for (int j = 0; j < 8; j++) {
+        if (8 - endingLine + j < 8 && b[8 - endingLine + j][startingColumn] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, startingColumn, code, b, i);
+            return true;
+        }
+        if (8 - endingLine - j > -1 && b[8 - endingLine - j][startingColumn] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, startingColumn, code, b, i);
+            return true;
+        }
+    }
+    return false;
+}
+
+void pawnMove(vector<vector<int>>& b, struct Info& i, string it, int startingColumn = -1, char pieceName = 'a')
 {
-    int col = int(it[0]) - 97;
-    int lin = it[1] - '0';
+    int endingColumn = int(it[0]) - 97;
+    int endingLine = it[1] - '0';
     int code = (i.turn == 'w') ? 10 : 4;
 
-    if (searchLineOrColumn(lin, col, l, c, code, b, i)) {
+    if (startingColumn != -1 && searchColumn(endingLine, endingColumn, startingColumn, code, b, i)) {
         return;
     }
 
     if (i.turn == 'w') {
-        for (int j = 8 - lin + 1; j < 8; j++) {
-            if (b[j][col] == 10) {
+        for (int j = 8 - endingLine + 1; j < 8; j++) {
+            if (b[j][endingColumn] == 10) {
                 for (auto& p : pieces) {
-                    if ((p.getY() == j) && (p.getX() == col)) {
-                        p.setY(8 - lin);
-                        p.setX(col);
-                        b[8 - lin][col] = (piece != 'a') ? piecesNamesMap[piece] : 10;
-                        b[j][col] = 0;
+                    if ((p.getY() == j) && (p.getX() == endingColumn)) {
+                        p.setY(8 - endingLine);
+                        p.setX(endingColumn);
+                        b[8 - endingLine][endingColumn] = (pieceName != 'a') ? piecesNamesMap[pieceName] : 10;
+                        b[j][endingColumn] = 0;
                         i.enPassant = '-';
                         break;
                     }
                 }
             }
-            if (j - (8 - lin + 1) == 2) {
+            if (j - (8 - endingLine + 1) == 2) {
                 i.enPassant = it;
             }
         }
@@ -529,20 +557,20 @@ void pawnMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, int
     }
 
     if (i.turn == 'b') {
-        for (int j = 8 - lin - 1; j > 0; j--) {
-            if (b[j][col] == 4) {
+        for (int j = 8 - endingLine - 1; j > 0; j--) {
+            if (b[j][endingColumn] == 4) {
                 for (auto& p : pieces) {
-                    if ((p.getY() == j) && (p.getX() == col)) {
-                        p.setY(8 - lin);
-                        p.setX(col);
-                        b[8 - lin][col] = (piece != 'a') ? piecesNamesMap[tolower(piece)] : 4;
-                        b[j][col] = 0;
+                    if ((p.getY() == j) && (p.getX() == endingColumn)) {
+                        p.setY(8 - endingLine);
+                        p.setX(endingColumn);
+                        b[8 - endingLine][endingColumn] = (pieceName != 'a') ? piecesNamesMap[tolower(pieceName)] : 4;
+                        b[j][endingColumn] = 0;
                         i.enPassant = '-';
                         break;
                     }
                 }
             }
-            if (j - (8 - lin - 1) == -2) {
+            if (j - (8 - endingLine - 1) == -2) {
                 i.enPassant = it;
             }
         }
@@ -553,174 +581,186 @@ void pawnMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, int
     }
 }
 
-void rookMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, int c = -1) {
-    int col = int(it[1]) - 97;
-    int lin = it[2] - '0';
+void rookMove(vector<vector<int>>& b, struct Info& i, string it, int startingLine = -1, int startingColumn = -1) {
+    int endingColumn = int(it[1]) - 97;
+    int endingLine = it[2] - '0';
     int code = (i.turn == 'w') ? 12 : 6;
 
-    if (searchLineOrColumn(lin, col, l, c, code, b, i)) {
+    if (startingLine != -1 && searchLine(endingLine, endingColumn, startingLine, code, b, i)) {
+        return;
+    } 
+    else if (startingColumn != -1 && searchColumn(endingLine, endingColumn, startingColumn, code, b, i)) {
         return;
     }
 
     for (int j = 0; j < 8; j++) {
-        if (8 - lin + j < 8 && b[8 - lin + j][col] == code) {
-            searchPieceInVector(lin, col, 8 - lin + j, col, code, b, i);
+        if (8 - endingLine + j < 8 && b[8 - endingLine + j][endingColumn] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn, code, b, i);
             return;
         }
-        if (8 - lin - j > -1 && b[8 - lin - j][col] == code) {
-            searchPieceInVector(lin, col, 8 - lin - j, col, code, b, i);
+        if (8 - endingLine - j > -1 && b[8 - endingLine - j][endingColumn] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn, code, b, i);
             return;
         }
-        if (col + j < 8 && b[8 - lin][col + j] == code) {
-            searchPieceInVector(lin, col, 8 - lin, col + j, code, b, i);
+        if (endingColumn + j < 8 && b[8 - endingLine][endingColumn + j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn + j, code, b, i);
             return;
         }
-        if (col - j > -1 && b[8 - lin][col - j] == code) {
-            searchPieceInVector(lin, col, 8 - lin, col - j, code, b, i);
+        if (endingColumn - j > -1 && b[8 - endingLine][endingColumn - j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn - j, code, b, i);
             return;
         }
     }
 }
 
-void bishopMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, int c = -1) {
-    int col = int(it[1]) - 97;
-    int lin = it[2] - '0';
+void bishopMove(vector<vector<int>>& b, struct Info& i, string it, int startingLine = -1, int startingColumn = -1) {
+    int endingColumn = int(it[1]) - 97;
+    int endingLine = it[2] - '0';
     int code = (i.turn == 'w') ? 7 : 1;
 
-    if (searchLineOrColumn(lin, col, l, c, code, b, i)) {
+    if (startingLine != -1 && searchLine(endingLine, endingColumn, startingLine, code, b, i)) {
+        return;
+    }
+    else if (startingColumn != -1 && searchColumn(endingLine, endingColumn, startingColumn, code, b, i)) {
         return;
     }
 
     for (int j = 0; j < 8; j++) {
-        if (8 - lin + j < 8 && col + j < 8 && b[8 - lin + j][col + j] == code) {
-            searchPieceInVector(lin, col, 8 - lin + j, col + j, code, b, i);
+        if (8 - endingLine + j < 8 && endingColumn + j < 8 && b[8 - endingLine + j][endingColumn + j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn + j, code, b, i);
             return;
         }
-        if (8 - lin - j > -1 && col + j < 8 && b[8 - lin - j][col + j] == code) {
-            searchPieceInVector(lin, col, 8 - lin - j, col + j, code, b, i);
+        if (8 - endingLine - j > -1 && endingColumn + j < 8 && b[8 - endingLine - j][endingColumn + j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn + j, code, b, i);
             return;
         }
-        if (8 - lin + j < 8 && col - j > -1 && b[8 - lin + j][col - j] == code) {
-            searchPieceInVector(lin, col, 8 - lin + j, col - j, code, b, i);
+        if (8 - endingLine + j < 8 && endingColumn - j > -1 && b[8 - endingLine + j][endingColumn - j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn - j, code, b, i);
             return;
         }
-        if (8 - lin - j > -1 && col - j > -1 && b[8 - lin - j][col - j] == code) {
-            searchPieceInVector(lin, col, 8 - lin - j, col - j, code, b, i);
+        if (8 - endingLine - j > -1 && endingColumn - j > -1 && b[8 - endingLine - j][endingColumn - j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn - j, code, b, i);
             return;
         }
     }
 }
 
-void queenMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, int c = -1) {
-    int col = int(it[1]) - 97;
-    int lin = it[2] - '0';
+void queenMove(vector<vector<int>>& b, struct Info& i, string it, int startingLine = -1, int startingColumn = -1) {
+    int endingColumn = int(it[1]) - 97;
+    int endingLine = it[2] - '0';
     int code = (i.turn == 'w') ? 11 : 5;
 
-    if (searchLineOrColumn(lin, col, l, c, code, b, i)) {
+    if (startingLine != -1 && searchLine(endingLine, endingColumn, startingLine, code, b, i)) {
+        return;
+    }
+    else if (startingColumn != -1 && searchColumn(endingLine, endingColumn, startingColumn, code, b, i)) {
         return;
     }
 
     for (int j = 0; j < 8; j++) {
-        if (8 - lin + j < 8 && b[8 - lin + j][col] == code) {
-            searchPieceInVector(lin, col, 8 - lin + j, col, code, b, i);
+        if (8 - endingLine + j < 8 && b[8 - endingLine + j][endingColumn] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn, code, b, i);
             return;
         }
-        if (8 - lin - j > -1 && b[8 - lin - j][col] == code) {
-            searchPieceInVector(lin, col, 8 - lin - j, col, code, b, i);
+        if (8 - endingLine - j > -1 && b[8 - endingLine - j][endingColumn] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn, code, b, i);
             return;
         }
-        if (col + j < 8 && b[8 - lin][col + j] == code) {
-            searchPieceInVector(lin, col, 8 - lin, col + j, code, b, i);
+        if (endingColumn + j < 8 && b[8 - endingLine][endingColumn + j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn + j, code, b, i);
             return;
         }
-        if (col - j > -1 && b[8 - lin][col - j] == code) {
-            searchPieceInVector(lin, col, 8 - lin, col - j, code, b, i);
+        if (endingColumn - j > -1 && b[8 - endingLine][endingColumn - j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn - j, code, b, i);
             return;
         }
-        if (8 - lin + j < 8 && col + j < 8 && b[8 - lin + j][col + j] == code) {
-            searchPieceInVector(lin, col, 8 - lin + j, col + j, code, b, i);
+        if (8 - endingLine + j < 8 && endingColumn + j < 8 && b[8 - endingLine + j][endingColumn + j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn + j, code, b, i);
             return;
         }
-        if (8 - lin - j > -1 && col + j < 8 && b[8 - lin - j][col + j] == code) {
-            searchPieceInVector(lin, col, 8 - lin - j, col + j, code, b, i);
+        if (8 - endingLine - j > -1 && endingColumn + j < 8 && b[8 - endingLine - j][endingColumn + j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn + j, code, b, i);
             return;
         }
-        if (8 - lin + j < 8 && col - j > -1 && b[8 - lin + j][col - j] == code) {
-            searchPieceInVector(lin, col, 8 - lin + j, col - j, code, b, i);
+        if (8 - endingLine + j < 8 && endingColumn - j > -1 && b[8 - endingLine + j][endingColumn - j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn - j, code, b, i);
             return;
         }
-        if (8 - lin - j > -1 && col - j > -1 && b[8 - lin - j][col - j] == code) {
-            searchPieceInVector(lin, col, 8 - lin - j, col - j, code, b, i);
+        if (8 - endingLine - j > -1 && endingColumn - j > -1 && b[8 - endingLine - j][endingColumn - j] == code) {
+            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn - j, code, b, i);
             return;
         }
     }
 }
 
 void kingMove(vector<vector<int>>& b, struct Info& i, string it) {
-    int col = int(it[1]) - 97;
-    int lin = it[2] - '0';
+    int endingColumn = int(it[1]) - 97;
+    int endingLine = it[2] - '0';
     int code = (i.turn == 'w') ? 8 : 2;
     int j = 1;
 
-    if (8 - lin + j < 8 && b[8 - lin + j][col] == code) {
-        searchPieceInVector(lin, col, 8 - lin + j, col, code, b, i);
+    if (8 - endingLine + j < 8 && b[8 - endingLine + j][endingColumn] == code) {
+        searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn, code, b, i);
         return;
     }
-    if (8 - lin - j > -1 && b[8 - lin - j][col] == code) {
-        searchPieceInVector(lin, col, 8 - lin - j, col, code, b, i);
+    if (8 - endingLine - j > -1 && b[8 - endingLine - j][endingColumn] == code) {
+        searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn, code, b, i);
         return;
     }
-    if (col + j < 8 && b[8 - lin][col + j] == code) {
-        searchPieceInVector(lin, col, 8 - lin, col + j, code, b, i);
+    if (endingColumn + j < 8 && b[8 - endingLine][endingColumn + j] == code) {
+        searchPieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn + j, code, b, i);
         return;
     }
-    if (col - j > -1 && b[8 - lin][col - j] == code) {
-        searchPieceInVector(lin, col, 8 - lin, col - j, code, b, i);
+    if (endingColumn - j > -1 && b[8 - endingLine][endingColumn - j] == code) {
+        searchPieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn - j, code, b, i);
         return;
     }
-    if (8 - lin + j < 8 && col + j < 8 && b[8 - lin + j][col + j] == code) {
-        searchPieceInVector(lin, col, 8 - lin + j, col + j, code, b, i);
+    if (8 - endingLine + j < 8 && endingColumn + j < 8 && b[8 - endingLine + j][endingColumn + j] == code) {
+        searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn + j, code, b, i);
         return;
     }
-    if (8 - lin - j > -1 && col + j < 8 && b[8 - lin - j][col + j] == code) {
-        searchPieceInVector(lin, col, 8 - lin - j, col + j, code, b, i);
+    if (8 - endingLine - j > -1 && endingColumn + j < 8 && b[8 - endingLine - j][endingColumn + j] == code) {
+        searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn + j, code, b, i);
         return;
     }
-    if (8 - lin + j < 8 && col - j > -1 && b[8 - lin + j][col - j] == code) {
-        searchPieceInVector(lin, col, 8 - lin + j, col - j, code, b, i);
+    if (8 - endingLine + j < 8 && endingColumn - j > -1 && b[8 - endingLine + j][endingColumn - j] == code) {
+        searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn - j, code, b, i);
         return;
     }
-    if (8 - lin - j > -1 && col - j > -1 && b[8 - lin - j][col - j] == code) {
-        searchPieceInVector(lin, col, 8 - lin - j, col - j, code, b, i);
+    if (8 - endingLine - j > -1 && endingColumn - j > -1 && b[8 - endingLine - j][endingColumn - j] == code) {
+        searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn - j, code, b, i);
         return;
     }
 }
 
-void knightMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, int c = -1) {
-    int col = int(it[1]) - 97;
-    int lin = it[2] - '0';
+void knightMove(vector<vector<int>>& b, struct Info& i, string it, int startingLine = -1, int startingColumn = -1) {
+    int endingColumn = int(it[1]) - 97;
+    int endingLine = it[2] - '0';
     int code = (i.turn == 'w') ? 9 : 3;
 
-    if (searchLineOrColumn(lin, col, l, c, code, b, i)) {
+    if (startingLine != -1 && searchLine(endingLine, endingColumn, startingLine, code, b, i)) {
+        return;
+    }
+    else if (startingColumn != -1 && searchColumn(endingLine, endingColumn, startingColumn, code, b, i)) {
         return;
     }
 
-    for (int j = col - 2; j <= col + 2; j++) {
-        if (j > -1 && j < 8 && j != col) {
-            if (8 - lin - 2 > -1 && 8 - lin - 2 < 8 && b[8 - lin - 2][j] == code) {
-                searchPieceInVector(lin, col, 8 - lin - 2, j, code, b, i);
+    for (int j = endingColumn - 2; j <= endingColumn + 2; j++) {
+        if (j > -1 && j < 8 && j != endingColumn) {
+            if (8 - endingLine - 2 > -1 && 8 - endingLine - 2 < 8 && b[8 - endingLine - 2][j] == code) {
+                searchPieceInVector(endingLine, endingColumn, 8 - endingLine - 2, j, code, b, i);
                 return;
             }
-            if (8 - lin + 2 > -1 && 8 - lin + 2 < 8 && b[8 - lin + 2][j] == code) {
-                searchPieceInVector(lin, col, 8 - lin + 2, j, code, b, i);
+            if (8 - endingLine + 2 > -1 && 8 - endingLine + 2 < 8 && b[8 - endingLine + 2][j] == code) {
+                searchPieceInVector(endingLine, endingColumn, 8 - endingLine + 2, j, code, b, i);
                 return;
             }
-            if (8 - lin - 1 > -1 && 8 - lin - 2 < 8 && b[8 - lin - 1][j] == code) {
-                searchPieceInVector(lin, col, 8 - lin - 1, j, code, b, i);
+            if (8 - endingLine - 1 > -1 && 8 - endingLine - 2 < 8 && b[8 - endingLine - 1][j] == code) {
+                searchPieceInVector(endingLine, endingColumn, 8 - endingLine - 1, j, code, b, i);
                 return;
             }
-            if (8 - lin + 1 > -1 && 8 - lin + 1 < 8 && b[8 - lin + 1][j] == code) {
-                searchPieceInVector(lin, col, 8 - lin + 1, j, code, b, i);
+            if (8 - endingLine + 1 > -1 && 8 - endingLine + 1 < 8 && b[8 - endingLine + 1][j] == code) {
+                searchPieceInVector(endingLine, endingColumn, 8 - endingLine + 1, j, code, b, i);
                 return;
             }
         }
@@ -728,37 +768,19 @@ void knightMove(vector<vector<int>>& b, struct Info& i, string it, int l = -1, i
 }
 
 void pawnTakes(vector<vector<int>>& b, struct Info& i, string it) {
-    int col = -1, lin = -1;
-    if (isalpha(it[0]) && islower(it[0])) {  // se precizeaza de pe ce coloana provine pionul care ia piesa
-        col = int(it[0]) - 97;
-        it = it.substr(2, 2);  // tai din mutare coloana precizata si caracterul 'x'
-        // sterg din vectorul de piese piesa care va fi luata
-        int index = 0;
-        int c = int(it[0]) - 97;
-        int l = it[1] - '0';
-        for (auto& p : pieces) {
-            if (p.getX() == c && p.getY() == 8 - l) {
-                pieces.erase(pieces.begin() + index);
-            }
-            index++;
+    int startingColumn = int(it[0]) - 97;
+    it = it.substr(2, 2);  // tai din mutare coloana precizata si caracterul 'x'
+    // sterg din vectorul de piese piesa care va fi luata
+    int index = 0;
+    int endingColumn = int(it[0]) - 97;
+    int endingLine = it[1] - '0';
+    for (auto& p : pieces) {
+        if (p.getX() == endingColumn && p.getY() == 8 - endingLine) {
+            pieces.erase(pieces.begin() + index);
         }
-        pawnMove(b, i, it, lin, col);
+        index++;
     }
-    else if (isdigit(it[0])) {  // se precizeaza de pe ce linie provine pionul care ia piesa
-        lin = it[0] - '0';
-        it = it.substr(2, 2);  // tai din mutare linia precizata si caracterul 'x'
-        // sterg din vectorul de piese piesa care va fi luata
-        int index = 0;
-        int c = int(it[0]) - 97;
-        int l = it[1] - '0';
-        for (auto& p : pieces) {
-            if (p.getX() == c && p.getY() == 8 - l) {
-                pieces.erase(pieces.begin() + index);
-            }
-            index++;
-        }
-        pawnMove(b, i, it, lin, col);
-    }
+    pawnMove(b, i, it, startingColumn);
 }
 
 void listProcessing(vector<string> list) {
@@ -836,35 +858,35 @@ void listProcessing(vector<string> list) {
                 }
             }
             else if (it[2] == '=') {
-                pawnMove(b, i, it, it[3]);
+                // pawnMove(b, i, it, it[3]);
             }
             else if (it[it.size() - 1] == '+') {
                 // O piesa a pus regele in sah
             }
             else {
-                int col = -1, lin = -1;
+                int endingColumn = -1, endingLine = -1;
                 if (isdigit(it[1])) {
-                    lin = it[1] - '0';
+                    endingLine = it[1] - '0';
                 }
                 else if(isalpha(it[1])) {
-                    col = int(it[1]) - 97;
+                    endingColumn = int(it[1]) - 97;
                 }
 
                 if (it[0] == 'R') {
                     it = it.substr(1, 3);
-                    rookMove(b, i, it, lin, col);
+                    rookMove(b, i, it, endingLine, endingColumn);
                 }
                 else if (it[0] == 'B') {
                     it = it.substr(1, 3);
-                    bishopMove(b, i, it, lin, col);
+                    bishopMove(b, i, it, endingLine, endingColumn);
                 }
                 else if (it[0] == 'Q') {
                     it = it.substr(1, 3);
-                    queenMove(b, i, it, lin, col);
+                    queenMove(b, i, it, endingLine, endingColumn);
                 }
                 else if (it[0] = 'N') {
                     it = it.substr(1, 3);
-                    knightMove(b, i, it, lin, col);
+                    knightMove(b, i, it, endingLine, endingColumn);
                 }
             }
         }
@@ -909,7 +931,6 @@ int main() {
     moves.push_back("Ra6");
     moves.push_back("h3");
     moves.push_back("Rh6");
-    //moves.push_back("a8=B");
 
     listProcessing(moves);
     Position lastPos = positions.at(positions.size() - 1);
