@@ -1251,6 +1251,32 @@ int evaluatePosition(vector<vector<int>>& b) {
     return evaluation;
 }
 
+vector<Piece> generatePiecesVector(vector<vector<int>>& b) {
+    vector<Piece> piecesArr;
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+            if (b[i][j]) {
+                piecesArr.push_back(Piece(j, i, b[i][j]));
+            }
+        }
+    }
+
+    return piecesArr;
+}
+
+void createImage(RenderWindow* window, vector<vector<int>>& b) {
+    vector<Piece> piecesArr = generatePiecesVector(b);
+
+    Texture texture;
+    texture.create(window->getSize().x, window->getSize().y);
+    window->clear();
+    drawBoard(window);
+    drawPieces(window, piecesArr);
+    texture.update(*window);
+    texture.copyToImage().saveToFile("pozitie.png");
+}
+
+
 int main() {
     startingBoard.resize(8);
     for (int i = 0; i < 8; i++) {
@@ -1344,39 +1370,19 @@ int main() {
 
     listProcessing(moves);
     Position lastPos = positions.at(positions.size() - 1);
-    vector<vector<int>> b = positions.at(positions.size() - 1).getBoard();
+    vector<vector<int>> b = positions.at(7).getBoard();
 
-    cout << endl << "evaluare" << evaluatePosition(b) << endl;
-    
-    while (window.isOpen())
-    {
-        // check all the window's events that were triggered since the last iteration of the loop
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            // "close requested" event: we close the window
-            if (event.type == sf::Event::Closed)
-                window.close();
-        }
+    pieces = generatePiecesVector(b);
 
-        // clear the window with black color
-        window.clear(sf::Color::Black);
+    createImage(&window, b);
 
-        // draw everything here...
-        drawBoard(&window);
-        drawPieces(&window, pieces);
-
-        // end the current frame
-        window.display();
-    }
-    
-    
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
             cout << b[i][j] << ' ';
         }
         cout << endl;
     }
+
     for (int i = 0; i < positions.size(); i++) {
         cout << positions.at(i).getInfo().turn;
         cout << "\n";
