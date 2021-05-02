@@ -1,5 +1,5 @@
 ﻿  SmartChessboard.cpp
-D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(141,62): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(141,42): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(497): warning C4715: 'searchLineOrColumn': not all control paths return a value
-  SmartChessboard.vcxproj -> D:\github\SmartChessboard\x64\Debug\SmartChessboard.exe
+C:\Users\SSD\Desktop\Github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(141,62): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\SSD\Desktop\Github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(141,42): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\SSD\Desktop\Github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(497): warning C4715: 'searchLineOrColumn': not all control paths return a value
+  SmartChessboard.vcxproj -> C:\Users\SSD\Desktop\Github\SmartChessboard\x64\Debug\SmartChessboard.exe

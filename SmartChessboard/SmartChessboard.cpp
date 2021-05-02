@@ -1208,6 +1208,49 @@ void listProcessing(vector<string> list) {
     }
 }
 
+int evaluatePosition(vector<vector<int>>& b) {
+    int evaluation = 0;
+
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+            switch (b[i][j]) {
+            case (1):
+                evaluation -= 3;
+                break;
+            case (3):
+                evaluation -= 3;
+                break;
+            case(4):
+                evaluation -= 1;
+                break;
+            case(5):
+                evaluation -= 9;
+                break;
+            case(6):
+                evaluation -= 5;
+                break;
+            case (7):
+                evaluation += 3;
+                break;
+            case (9):
+                evaluation += 3;
+                break;
+            case(10):
+                evaluation += 1;
+                break;
+            case(11):
+                evaluation += 9;
+                break;
+            case(12):
+                evaluation += 5;
+                break;
+            }
+        }
+    }
+
+    return evaluation;
+}
+
 int main() {
     startingBoard.resize(8);
     for (int i = 0; i < 8; i++) {
@@ -1302,6 +1345,8 @@ int main() {
     listProcessing(moves);
     Position lastPos = positions.at(positions.size() - 1);
     vector<vector<int>> b = positions.at(positions.size() - 1).getBoard();
+
+    cout << endl << "evaluare" << evaluatePosition(b) << endl;
     
     while (window.isOpen())
     {
