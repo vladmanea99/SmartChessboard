@@ -444,7 +444,7 @@ void updateCastlingKing(int endingLine, int endingColumn, struct Info& i) {
     }
 }
 
-void searchPieceInVector(int endingLine, int endingColumn, int startingLine, int startingColumn, int code, vector<vector<int>>& b, struct Info& i) {
+void searchAndMovePieceInVector(int endingLine, int endingColumn, int startingLine, int startingColumn, int code, vector<vector<int>>& b, struct Info& i) {
     for (auto& p : pieces) {
         if ((p.getY() == startingLine) && (p.getX() == startingColumn)) {
             p.setY(8 - endingLine);
@@ -460,7 +460,9 @@ void searchPieceInVector(int endingLine, int endingColumn, int startingLine, int
             }
             i.turn = (i.turn == 'w') ? 'b' : 'w';
             i.halfmove++;
-            i.fullmove++;
+            if (i.turn == 'w') {
+                i.fullmove++;
+            }
             return;
         }
     }
@@ -470,11 +472,11 @@ boolean searchLineOrColumn(int endingLine, int endingColumn, int startingLine, i
     if (startingColumn > -1) {
         for (int j = 0; j < 8; j++) {
             if (8 - endingLine + j < 8 && b[8 - endingLine + j][startingColumn] == code) {
-                searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, startingColumn, code, b, i);
+                searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + j, startingColumn, code, b, i);
                 return true;
             }
             if (8 - endingLine - j > -1 && b[8 - endingLine - j][startingColumn] == code) {
-                searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, startingColumn, code, b, i);
+                searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - j, startingColumn, code, b, i);
                 return true;
             }
         }
@@ -482,11 +484,11 @@ boolean searchLineOrColumn(int endingLine, int endingColumn, int startingLine, i
     else if (startingLine > -1) {
         for (int j = 0; j < 8; j++) {
             if (endingColumn + j < 8 && b[8 - startingLine][endingColumn + j] == code) {
-                searchPieceInVector(endingLine, endingColumn, 8 - startingLine, endingColumn + j, code, b, i);
+                searchAndMovePieceInVector(endingLine, endingColumn, 8 - startingLine, endingColumn + j, code, b, i);
                 return true;
             }
             if (endingColumn - j > -1 && b[8 - startingLine][endingColumn - j] == code) {
-                searchPieceInVector(endingLine, endingColumn, 8 - startingLine, endingColumn - j, code, b, i);
+                searchAndMovePieceInVector(endingLine, endingColumn, 8 - startingLine, endingColumn - j, code, b, i);
                 return true;
             }
         }
@@ -497,11 +499,11 @@ boolean searchLineOrColumn(int endingLine, int endingColumn, int startingLine, i
 boolean searchLine(int endingLine, int endingColumn, int startingLine, int code, vector<vector<int>>& b, struct Info& i) {
     for (int j = 0; j < 8; j++) {
         if (endingColumn + j < 8 && b[8 - startingLine][endingColumn + j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - startingLine, endingColumn + j, code, b, i);
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - startingLine, endingColumn + j, code, b, i);
             return true;
         }
         if (endingColumn - j > -1 && b[8 - startingLine][endingColumn - j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - startingLine, endingColumn - j, code, b, i);
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - startingLine, endingColumn - j, code, b, i);
             return true;
         }
     }
@@ -511,11 +513,11 @@ boolean searchLine(int endingLine, int endingColumn, int startingLine, int code,
 boolean searchColumn(int endingLine, int endingColumn, int startingColumn, int code, vector<vector<int>>& b, struct Info& i) {
     for (int j = 0; j < 8; j++) {
         if (8 - endingLine + j < 8 && b[8 - endingLine + j][startingColumn] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, startingColumn, code, b, i);
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + j, startingColumn, code, b, i);
             return true;
         }
         if (8 - endingLine - j > -1 && b[8 - endingLine - j][startingColumn] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, startingColumn, code, b, i);
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - j, startingColumn, code, b, i);
             return true;
         }
     }
@@ -533,7 +535,8 @@ void pawnMove(vector<vector<int>>& b, struct Info& i, string it, int startingCol
     }
 
     if (i.turn == 'w') {
-        for (int j = 8 - endingLine + 1; j < 8; j++) {
+        bool breakCheck = false;
+        for (int j = 8 - endingLine + 1; j < 8; j++) {        
             if (b[j][endingColumn] == 10) {
                 for (auto& p : pieces) {
                     if ((p.getY() == j) && (p.getX() == endingColumn)) {
@@ -542,21 +545,26 @@ void pawnMove(vector<vector<int>>& b, struct Info& i, string it, int startingCol
                         b[8 - endingLine][endingColumn] = (pieceName != 'a') ? piecesNamesMap[pieceName] : 10;
                         b[j][endingColumn] = 0;
                         i.enPassant = '-';
+                        breakCheck = true;
                         break;
                     }
+                }  
+                if (breakCheck) {
+                    if (j - (8 - endingLine) == 2) {
+                        cout << "aici";
+                        i.enPassant = it;
+                    }
+                    break;
                 }
-            }
-            if (j - (8 - endingLine + 1) == 2) {
-                i.enPassant = it;
             }
         }
         i.turn = 'b';
-        i.halfmove++;
-        i.fullmove++;
+        i.halfmove = 0;
         return;
     }
 
     if (i.turn == 'b') {
+        bool breakCheck = false;
         for (int j = 8 - endingLine - 1; j > 0; j--) {
             if (b[j][endingColumn] == 4) {
                 for (auto& p : pieces) {
@@ -566,16 +574,20 @@ void pawnMove(vector<vector<int>>& b, struct Info& i, string it, int startingCol
                         b[8 - endingLine][endingColumn] = (pieceName != 'a') ? piecesNamesMap[tolower(pieceName)] : 4;
                         b[j][endingColumn] = 0;
                         i.enPassant = '-';
+                        breakCheck = true;
                         break;
                     }
+                }    
+                if (breakCheck) {
+                    if (j - (8 - endingLine) == -2) {
+                        i.enPassant = it;
+                    }
+                    break;
                 }
-            }
-            if (j - (8 - endingLine - 1) == -2) {
-                i.enPassant = it;
-            }
+            }       
         }
         i.turn = 'w';
-        i.halfmove++;
+        i.halfmove = 0;
         i.fullmove++;
         return;
     }
@@ -586,6 +598,11 @@ void rookMove(vector<vector<int>>& b, struct Info& i, string it, int startingLin
     int endingLine = it[2] - '0';
     int code = (i.turn == 'w') ? 12 : 6;
 
+
+    if (startingLine != -1 && startingColumn != -1) {
+        searchAndMovePieceInVector(endingLine, endingColumn, startingLine, startingColumn, code, b, i);
+        return;
+    }
     if (startingLine != -1 && searchLine(endingLine, endingColumn, startingLine, code, b, i)) {
         return;
     } 
@@ -593,21 +610,40 @@ void rookMove(vector<vector<int>>& b, struct Info& i, string it, int startingLin
         return;
     }
 
+    bool goodDirections[4] = { true, true, true, true };
+
     for (int j = 0; j < 8; j++) {
-        if (8 - endingLine + j < 8 && b[8 - endingLine + j][endingColumn] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn, code, b, i);
+
+        
+        //Check if the direction we are going is good or not by checking if between the ending position and current position there is a piece other than the one we looking for
+        if (goodDirections[0] && 8 - endingLine + j < 8 && b[8 - endingLine + j][endingColumn] != 0 && b[8 - endingLine + j][endingColumn] != code) {
+            goodDirections[0] = false;
+        }
+        if (goodDirections[1] && 8 - endingLine - j > -1 && b[8 - endingLine - j][endingColumn] != 0 && b[8 - endingLine - j][endingColumn] != code) {
+            goodDirections[1] = false;
+        }
+        if (goodDirections[2] && endingColumn + j < 8 && b[8 - endingLine][endingColumn + j] != 0 && b[8 - endingLine][endingColumn + j] != code) {
+            goodDirections[2] = false;
+        }
+        if (goodDirections[3] && endingColumn - j > -1 && b[8 - endingLine][endingColumn - j] != 0 && b[8 - endingLine][endingColumn - j] != code) {
+            goodDirections[3] = false;
+        }
+
+        
+        if (goodDirections[0] && 8 - endingLine + j < 8 && b[8 - endingLine + j][endingColumn] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn, code, b, i);
             return;
         }
-        if (8 - endingLine - j > -1 && b[8 - endingLine - j][endingColumn] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn, code, b, i);
+        if (goodDirections[1] && 8 - endingLine - j > -1 && b[8 - endingLine - j][endingColumn] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn, code, b, i);
             return;
         }
-        if (endingColumn + j < 8 && b[8 - endingLine][endingColumn + j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn + j, code, b, i);
+        if (goodDirections[2] &&  endingColumn + j < 8 && b[8 - endingLine][endingColumn + j] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn + j, code, b, i);
             return;
         }
-        if (endingColumn - j > -1 && b[8 - endingLine][endingColumn - j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn - j, code, b, i);
+        if (goodDirections[3] &&  endingColumn - j > -1 && b[8 - endingLine][endingColumn - j] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn - j, code, b, i);
             return;
         }
     }
@@ -618,6 +654,10 @@ void bishopMove(vector<vector<int>>& b, struct Info& i, string it, int startingL
     int endingLine = it[2] - '0';
     int code = (i.turn == 'w') ? 7 : 1;
 
+    if (startingLine != -1 && startingColumn != -1) {
+        searchAndMovePieceInVector(endingLine, endingColumn, startingLine, startingColumn, code, b, i);
+        return;
+    }
     if (startingLine != -1 && searchLine(endingLine, endingColumn, startingLine, code, b, i)) {
         return;
     }
@@ -625,21 +665,35 @@ void bishopMove(vector<vector<int>>& b, struct Info& i, string it, int startingL
         return;
     }
 
+    bool goodDirections[4] = { true, true, true, true };
+
     for (int j = 0; j < 8; j++) {
-        if (8 - endingLine + j < 8 && endingColumn + j < 8 && b[8 - endingLine + j][endingColumn + j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn + j, code, b, i);
+        if (goodDirections[0] && 8 - endingLine + j < 8 && endingColumn + j < 8 && b[8 - endingLine + j][endingColumn + j] != 0 && b[8 - endingLine + j][endingColumn + j] != code) {
+            goodDirections[0] = false;
+        }
+        if (goodDirections[1] && 8 - endingLine - j > -1 && endingColumn + j < 8 && b[8 - endingLine - j][endingColumn + j] != 0 && b[8 - endingLine - j][endingColumn + j] != code) {
+            goodDirections[1] = false;
+        }
+        if (goodDirections[2] && 8 - endingLine + j < 8 && endingColumn - j > -1 && b[8 - endingLine + j][endingColumn - j] != 0 && b[8 - endingLine + j][endingColumn - j] != code) {
+            goodDirections[2] = false;
+        }
+        if (goodDirections[3] && 8 - endingLine - j > -1 && endingColumn - j > -1 && b[8 - endingLine - j][endingColumn - j] != 0 && b[8 - endingLine - j][endingColumn - j] != code) {
+            goodDirections[3] = false;
+        }
+        if (goodDirections[0] && 8 - endingLine + j < 8 && endingColumn + j < 8 && b[8 - endingLine + j][endingColumn + j] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn + j, code, b, i);
             return;
         }
-        if (8 - endingLine - j > -1 && endingColumn + j < 8 && b[8 - endingLine - j][endingColumn + j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn + j, code, b, i);
+        if (goodDirections[1] && 8 - endingLine - j > -1 && endingColumn + j < 8 && b[8 - endingLine - j][endingColumn + j] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn + j, code, b, i);
             return;
         }
-        if (8 - endingLine + j < 8 && endingColumn - j > -1 && b[8 - endingLine + j][endingColumn - j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn - j, code, b, i);
+        if (goodDirections[2] &&  8 - endingLine + j < 8 && endingColumn - j > -1 && b[8 - endingLine + j][endingColumn - j] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn - j, code, b, i);
             return;
         }
-        if (8 - endingLine - j > -1 && endingColumn - j > -1 && b[8 - endingLine - j][endingColumn - j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn - j, code, b, i);
+        if (goodDirections[3] &&  8 - endingLine - j > -1 && endingColumn - j > -1 && b[8 - endingLine - j][endingColumn - j] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn - j, code, b, i);
             return;
         }
     }
@@ -650,6 +704,10 @@ void queenMove(vector<vector<int>>& b, struct Info& i, string it, int startingLi
     int endingLine = it[2] - '0';
     int code = (i.turn == 'w') ? 11 : 5;
 
+    if (startingLine != -1 && startingColumn != -1) {
+        searchAndMovePieceInVector(endingLine, endingColumn, 8 - startingLine, startingColumn, code, b, i);
+        return;
+    }
     if (startingLine != -1 && searchLine(endingLine, endingColumn, startingLine, code, b, i)) {
         return;
     }
@@ -657,37 +715,64 @@ void queenMove(vector<vector<int>>& b, struct Info& i, string it, int startingLi
         return;
     }
 
+    bool goodDirections[8] = { true, true, true, true, true, true, true, true };
+
     for (int j = 0; j < 8; j++) {
-        if (8 - endingLine + j < 8 && b[8 - endingLine + j][endingColumn] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn, code, b, i);
+        if (goodDirections[0] && 8 - endingLine + j < 8 && b[8 - endingLine + j][endingColumn] != 0 && b[8 - endingLine + j][endingColumn] != code) {
+            goodDirections[0] = false;
+        }
+        if (goodDirections[1] && 8 - endingLine - j > -1 && b[8 - endingLine - j][endingColumn] != 0 && b[8 - endingLine - j][endingColumn] != code) {
+            goodDirections[1] = false;
+        }
+        if (goodDirections[2] && endingColumn + j < 8 && b[8 - endingLine][endingColumn + j] != 0 && b[8 - endingLine][endingColumn + j] != code) {
+            goodDirections[2] = false;
+        }
+        if (goodDirections[3] && endingColumn - j > -1 && b[8 - endingLine][endingColumn - j] != 0 && b[8 - endingLine][endingColumn - j] != code) {
+            goodDirections[3] = false;
+        }
+        if (goodDirections[4] && 8 - endingLine + j < 8 && endingColumn + j < 8 && b[8 - endingLine + j][endingColumn + j] != 0 && b[8 - endingLine + j][endingColumn + j] != code) {
+            goodDirections[4] = false;
+        }
+        if (goodDirections[5] && 8 - endingLine - j > -1 && endingColumn + j < 8 && b[8 - endingLine - j][endingColumn + j] != 0 && b[8 - endingLine - j][endingColumn + j] != code) {
+            goodDirections[5] = false;
+        }
+        if (goodDirections[6] && 8 - endingLine + j < 8 && endingColumn - j > -1 && b[8 - endingLine + j][endingColumn - j] != 0 && b[8 - endingLine + j][endingColumn - j] != code) {
+            goodDirections[6] = false;
+        }
+        if (goodDirections[7] && 8 - endingLine - j > -1 && endingColumn - j > -1 && b[8 - endingLine - j][endingColumn - j] != 0 && b[8 - endingLine - j][endingColumn - j] != code) {
+            goodDirections[7] = false;
+        }
+        
+        if (goodDirections[0] && 8 - endingLine + j < 8 && b[8 - endingLine + j][endingColumn] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn, code, b, i);
             return;
         }
-        if (8 - endingLine - j > -1 && b[8 - endingLine - j][endingColumn] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn, code, b, i);
+        if (goodDirections[1] && 8 - endingLine - j > -1 && b[8 - endingLine - j][endingColumn] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn, code, b, i);
             return;
         }
-        if (endingColumn + j < 8 && b[8 - endingLine][endingColumn + j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn + j, code, b, i);
+        if (goodDirections[2] && endingColumn + j < 8 && b[8 - endingLine][endingColumn + j] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn + j, code, b, i);
             return;
         }
-        if (endingColumn - j > -1 && b[8 - endingLine][endingColumn - j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn - j, code, b, i);
+        if (goodDirections[3] && endingColumn - j > -1 && b[8 - endingLine][endingColumn - j] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn - j, code, b, i);
             return;
         }
-        if (8 - endingLine + j < 8 && endingColumn + j < 8 && b[8 - endingLine + j][endingColumn + j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn + j, code, b, i);
+        if (goodDirections[4] && 8 - endingLine + j < 8 && endingColumn + j < 8 && b[8 - endingLine + j][endingColumn + j] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn + j, code, b, i);
             return;
         }
-        if (8 - endingLine - j > -1 && endingColumn + j < 8 && b[8 - endingLine - j][endingColumn + j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn + j, code, b, i);
+        if (goodDirections[5] && 8 - endingLine - j > -1 && endingColumn + j < 8 && b[8 - endingLine - j][endingColumn + j] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn + j, code, b, i);
             return;
         }
-        if (8 - endingLine + j < 8 && endingColumn - j > -1 && b[8 - endingLine + j][endingColumn - j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn - j, code, b, i);
+        if (goodDirections[6] && 8 - endingLine + j < 8 && endingColumn - j > -1 && b[8 - endingLine + j][endingColumn - j] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn - j, code, b, i);
             return;
         }
-        if (8 - endingLine - j > -1 && endingColumn - j > -1 && b[8 - endingLine - j][endingColumn - j] == code) {
-            searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn - j, code, b, i);
+        if (goodDirections[7] && 8 - endingLine - j > -1 && endingColumn - j > -1 && b[8 - endingLine - j][endingColumn - j] == code) {
+            searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn - j, code, b, i);
             return;
         }
     }
@@ -700,35 +785,35 @@ void kingMove(vector<vector<int>>& b, struct Info& i, string it) {
     int j = 1;
 
     if (8 - endingLine + j < 8 && b[8 - endingLine + j][endingColumn] == code) {
-        searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn, code, b, i);
+        searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn, code, b, i);
         return;
     }
     if (8 - endingLine - j > -1 && b[8 - endingLine - j][endingColumn] == code) {
-        searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn, code, b, i);
+        searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn, code, b, i);
         return;
     }
     if (endingColumn + j < 8 && b[8 - endingLine][endingColumn + j] == code) {
-        searchPieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn + j, code, b, i);
+        searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn + j, code, b, i);
         return;
     }
     if (endingColumn - j > -1 && b[8 - endingLine][endingColumn - j] == code) {
-        searchPieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn - j, code, b, i);
+        searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine, endingColumn - j, code, b, i);
         return;
     }
     if (8 - endingLine + j < 8 && endingColumn + j < 8 && b[8 - endingLine + j][endingColumn + j] == code) {
-        searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn + j, code, b, i);
+        searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn + j, code, b, i);
         return;
     }
     if (8 - endingLine - j > -1 && endingColumn + j < 8 && b[8 - endingLine - j][endingColumn + j] == code) {
-        searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn + j, code, b, i);
+        searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn + j, code, b, i);
         return;
     }
     if (8 - endingLine + j < 8 && endingColumn - j > -1 && b[8 - endingLine + j][endingColumn - j] == code) {
-        searchPieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn - j, code, b, i);
+        searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + j, endingColumn - j, code, b, i);
         return;
     }
     if (8 - endingLine - j > -1 && endingColumn - j > -1 && b[8 - endingLine - j][endingColumn - j] == code) {
-        searchPieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn - j, code, b, i);
+        searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - j, endingColumn - j, code, b, i);
         return;
     }
 }
@@ -738,6 +823,10 @@ void knightMove(vector<vector<int>>& b, struct Info& i, string it, int startingL
     int endingLine = it[2] - '0';
     int code = (i.turn == 'w') ? 9 : 3;
 
+    if (startingLine != -1 && startingColumn != -1) {
+        searchAndMovePieceInVector(endingLine, endingColumn, startingLine, startingColumn, code, b, i);
+        return;
+    }
     if (startingLine != -1 && searchLine(endingLine, endingColumn, startingLine, code, b, i)) {
         return;
     }
@@ -748,19 +837,19 @@ void knightMove(vector<vector<int>>& b, struct Info& i, string it, int startingL
     for (int j = endingColumn - 2; j <= endingColumn + 2; j++) {
         if (j > -1 && j < 8 && j != endingColumn) {
             if (8 - endingLine - 2 > -1 && 8 - endingLine - 2 < 8 && b[8 - endingLine - 2][j] == code) {
-                searchPieceInVector(endingLine, endingColumn, 8 - endingLine - 2, j, code, b, i);
+                searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - 2, j, code, b, i);
                 return;
             }
             if (8 - endingLine + 2 > -1 && 8 - endingLine + 2 < 8 && b[8 - endingLine + 2][j] == code) {
-                searchPieceInVector(endingLine, endingColumn, 8 - endingLine + 2, j, code, b, i);
+                searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + 2, j, code, b, i);
                 return;
             }
             if (8 - endingLine - 1 > -1 && 8 - endingLine - 2 < 8 && b[8 - endingLine - 1][j] == code) {
-                searchPieceInVector(endingLine, endingColumn, 8 - endingLine - 1, j, code, b, i);
+                searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine - 1, j, code, b, i);
                 return;
             }
             if (8 - endingLine + 1 > -1 && 8 - endingLine + 1 < 8 && b[8 - endingLine + 1][j] == code) {
-                searchPieceInVector(endingLine, endingColumn, 8 - endingLine + 1, j, code, b, i);
+                searchAndMovePieceInVector(endingLine, endingColumn, 8 - endingLine + 1, j, code, b, i);
                 return;
             }
         }
@@ -781,6 +870,18 @@ void pawnTakes(vector<vector<int>>& b, struct Info& i, string it) {
         index++;
     }
     pawnMove(b, i, it, startingColumn);
+}
+
+void removePiece(int endingLine, int endingColumn, vector<vector<int>>& b) {
+    int index = 0;
+    for (auto& p : pieces) {
+        if (p.getX() == endingColumn && p.getY() == 8 - endingLine) {
+            pieces.erase(pieces.begin() + index);
+            b[8 - endingLine][endingColumn] = 0;
+            break;
+        }
+        index++;
+    }
 }
 
 void listProcessing(vector<string> list) {
@@ -813,7 +914,10 @@ void listProcessing(vector<string> list) {
             }
             i = positions.at(positions.size() - 1).getInfo();
         }
-
+        //+ = sah, # = sah mat
+        if (it[it.size() - 1] == '+' || it[it.size() - 1] == '#') {
+            it = it.erase(it.size() - 1, 1);
+        }
         if (it == "O-O") {
             kingSideCastling(b, i);
         }
@@ -851,46 +955,250 @@ void listProcessing(vector<string> list) {
         else if (it.size() == 4) {
             if (it[1] == 'x') {
                 if (isalpha(it[0]) && isupper(it[0])) {
-                    // Orice alta piesa in afara de pion ia alta piesa
+                    it = it.erase(1, 1);
+                    int endingColumn = int(it[1]) - 97;
+                    int endingLine = it[2] - '0';
+                    removePiece(endingLine, endingColumn, b);
+                    if (it[0] == 'R') {
+                        rookMove(b, i, it);
+                    }
+                    else if (it[0] == 'B') {
+                        bishopMove(b, i, it);
+                    }
+                    else if (it[0] == 'Q') {
+                        queenMove(b, i, it);
+                    }
+                    else if (it[0] == 'K') {
+                        kingMove(b, i, it);
+                    }
+                    else if (it[0] = 'N') {
+                        knightMove(b, i, it);
+                    }
                 }
                 else {
                     pawnTakes(b, i, it);
                 }
             }
             else if (it[2] == '=') {
+                int endingColumn = int(it[0]) - 97;
+                int endingLine = it[1] - '0';
+                pawnMove(b, i, it);
+                removePiece(endingLine, endingColumn, b);
+                i.halfmove = 0;
+                if (it[3] == 'Q') {
+                    int code = -1;
+                    if (i.turn != 'w') {
+                        code = 11;
+                    }
+                    else {
+                        code = 5;
+                    }
+                    pieces.push_back(Piece(endingColumn, 8 - endingLine, code));
+                    b[8 - endingLine][endingColumn] = code;
+                }
+                if (it[3] == 'R') {
+                    int code = -1;
+                    if (i.turn != 'w') {
+                        code = 12;
+                    }
+                    else {
+                        code = 6;
+                    }
+                    pieces.push_back(Piece(endingColumn, 8 - endingLine, code));
+                    b[8 - endingLine][endingColumn] = code;
+                }
+                if (it[3] == 'B') {
+                    int code = -1;
+                    if (i.turn != 'w') {
+                        code = 7;
+                    }
+                    else {
+                        code = 1;
+                    }
+                    pieces.push_back(Piece(endingColumn, 8 - endingLine, code));
+                    b[8 - endingLine][endingColumn] = code;
+                }
+                if (it[3] == 'N') {
+                    int code = -1;
+                    if (i.turn != 'w') {
+                        code = 9;
+                    }
+                    else {
+                        code = 3;
+                    }
+                    pieces.push_back(Piece(endingColumn, 8 - endingLine, code));
+                    b[8 - endingLine][endingColumn] = code;
+                }
                 // pawnMove(b, i, it, it[3]);
             }
-            else if (it[it.size() - 1] == '+') {
-                // O piesa a pus regele in sah
-            }
             else {
-                int endingColumn = -1, endingLine = -1;
+                int startingColumn = -1, startingLine = -1;
                 if (isdigit(it[1])) {
-                    endingLine = it[1] - '0';
+                    startingLine = it[1] - '0';
                 }
                 else if(isalpha(it[1])) {
-                    endingColumn = int(it[1]) - 97;
+                    startingColumn = int(it[1]) - 97;
                 }
 
                 if (it[0] == 'R') {
                     it = it.substr(1, 3);
-                    rookMove(b, i, it, endingLine, endingColumn);
+                    rookMove(b, i, it, startingLine, startingColumn);
                 }
                 else if (it[0] == 'B') {
                     it = it.substr(1, 3);
-                    bishopMove(b, i, it, endingLine, endingColumn);
+                    bishopMove(b, i, it, startingLine, startingColumn);
                 }
                 else if (it[0] == 'Q') {
                     it = it.substr(1, 3);
-                    queenMove(b, i, it, endingLine, endingColumn);
+                    queenMove(b, i, it, startingLine, startingColumn);
                 }
                 else if (it[0] = 'N') {
                     it = it.substr(1, 3);
-                    knightMove(b, i, it, endingLine, endingColumn);
+                    knightMove(b, i, it, startingLine, startingColumn);
                 }
             }
         }
+        else if (it.size() == 5) {
+            if (it[2] == 'x') {
+                int startingColumn = -1, startingLine = -1;
+                if (isdigit(it[1])) {
+                    startingLine = it[1] - '0';
+                }
+                else if (isalpha(it[1])) {
+                    startingColumn = int(it[1]) - 97;
+                }
+                int endingColumn = int(it[3]) - 97;
+                int endingLine = it[4] - '0';
+                removePiece(endingLine, endingColumn, b);
+                char piece = it[0];
+                it = it.substr(2, 3);
+                if (piece == 'R') {
+                    rookMove(b, i, it, startingLine, startingColumn);
+                }
+                else if (piece == 'B') {
+                    bishopMove(b, i, it, startingLine, startingColumn);
+                }
+                else if (piece == 'Q') {
+                    queenMove(b, i, it, startingLine, startingColumn);
+                }
+                else if (piece == 'N') {
+                    knightMove(b, i, it, startingLine, startingColumn);
+                }
+                i.halfmove = 0;
+            }
+            else if (isalpha(it[1]) && isdigit(it[2])) {
+                int startingColumn = int(it[1]) - 97;
+                int startingLine = it[2] - '0';
+                char piece = it[0];
+                it = it.substr(2, 3);
+                if (piece == 'R') {
+                    rookMove(b, i, it, startingLine, startingColumn);
+                }
+                else if (piece == 'B') {
+                    bishopMove(b, i, it, startingLine, startingColumn);
+                }
+                else if (piece == 'Q') {
+                    queenMove(b, i, it, startingLine, startingColumn);
+                }
+                else if (piece == 'N') {
+                    knightMove(b, i, it, startingLine, startingColumn);
+                }
+            }
+        }
+        else if (it.size() == 6) {
+            if (it[1] == 'x' && it[4] == '=') {
+                int endingColumn = int(it[2]) - 97;
+                int endingLine = it[3] - '0';
+                int startingColumn = int(it[0]) - 97;
+                int startingLine = 1;
+                int index = 0;
+                for (auto& piece : pieces) {
+                    if (piece.getX() == startingColumn && piece.getY() == startingLine) {
+                        pieces.erase(pieces.begin() + index);
+                        b[startingLine][startingColumn] = 0;
+                        break;
+                    }
+                    index++;
+                }
+                removePiece(endingLine, endingColumn, b);
 
+                if (it[5] == 'Q') {
+                    int code = -1;
+                    if (i.turn == 'w') {
+                        code = 11;
+                    }
+                    else {
+                        code = 5;
+                    }
+                    pieces.push_back(Piece(endingColumn, 8 - endingLine, code));
+                    b[8 - endingLine][endingColumn] = code;
+                }
+                if (it[5] == 'R') {
+                    int code = -1;
+                    if (i.turn == 'w') {
+                        code = 12;
+                    }
+                    else {
+                        code = 6;
+                    }
+                    pieces.push_back(Piece(endingColumn, 8 - endingLine, code));
+                    b[8 - endingLine][endingColumn] = code;
+                }
+                if (it[5] == 'B') {
+                    int code = -1;
+                    if (i.turn == 'w') {
+                        code = 7;
+                    }
+                    else {
+                        code = 1;
+                    }
+                    pieces.push_back(Piece(endingColumn, 8 - endingLine, code));
+                    b[8 - endingLine][endingColumn] = code;
+                }
+                if (it[5] == 'N') {
+                    int code = -1;
+                    if (i.turn == 'w') {
+                        code = 9;
+                    }
+                    else {
+                        code = 3;
+                    }
+                    pieces.push_back(Piece(endingColumn, 8 - endingLine, code));
+                    b[8 - endingLine][endingColumn] = code;
+                }
+                i.turn = (i.turn == 'w') ? 'b' : 'w';
+                i.halfmove = 0;
+                if (i.turn == 'w') {
+                    i.fullmove++;
+                }
+            }
+            else if (it[3] == 'x' && isalpha(it[1]) && isdigit(it[2])) {
+
+                int startingColumn = int(it[1]) - 97;
+                int startingLine = it[2] - '0';
+
+                char piece = it[0];
+
+                int endingColumn = int(it[4]) - 97;
+                int endingLine = it[5] - '0';
+
+                removePiece(endingLine, endingColumn, b);
+
+                it = it.substr(3, 3);
+                if (piece == 'R') {
+                    rookMove(b, i, it, startingLine, startingColumn);
+                }
+                else if (piece == 'B') {
+                    bishopMove(b, i, it, startingLine, startingColumn);
+                }
+                else if (piece == 'Q') {
+                    queenMove(b, i, it, startingLine, startingColumn);
+                }
+                else if (piece == 'N') {
+                    knightMove(b, i, it, startingLine, startingColumn);
+                }
+            }
+        }
         if (i.castling == "") {
             i.castling = "-";
         }
@@ -923,6 +1231,7 @@ int main() {
     // processFENstring(FEN, piecesMat, FENPieces, FENInfo);
     
     vector<string> moves;
+    /*
     moves.push_back("b4");
     moves.push_back("a5");
     moves.push_back("bxa5");
@@ -931,6 +1240,64 @@ int main() {
     moves.push_back("Ra6");
     moves.push_back("h3");
     moves.push_back("Rh6");
+    */
+
+    /*
+    moves.push_back("h4");
+    moves.push_back("Na6");
+    moves.push_back("h5");
+    moves.push_back("Rb8");
+    moves.push_back("h6");
+    moves.push_back("Ra8");
+    moves.push_back("hxg7");
+    moves.push_back("h6");
+    moves.push_back("g4");
+    moves.push_back("Nf6");
+    moves.push_back("g8=Q");
+    moves.push_back("Rb8");
+    moves.push_back("Qh7");
+    moves.push_back("Ra8");
+    moves.push_back("g5");
+    moves.push_back("Rb8");
+    moves.push_back("g6");
+    moves.push_back("Ra8");
+    moves.push_back("g7");
+    moves.push_back("Rb8");
+    moves.push_back("g8=Q");
+    moves.push_back("Ra8");
+    moves.push_back("e4");
+    moves.push_back("Rb8");
+    moves.push_back("Qgg4");
+    moves.push_back("Ra8");
+    moves.push_back("Qh4");
+    moves.push_back("Rb8");
+    moves.push_back("Qg6");
+    moves.push_back("Ra8");
+    moves.push_back("Qgg5");
+    moves.push_back("Rb8");
+    moves.push_back("Qdh5");
+    moves.push_back("Ng4");
+    moves.push_back("Qh5xg4");
+    */
+    moves.push_back("h4");
+    moves.push_back("Na6");
+    moves.push_back("h5");
+    moves.push_back("Rb8");
+    moves.push_back("h6");
+    moves.push_back("Ra8");
+    moves.push_back("hxg7");
+    moves.push_back("Rb8");
+    moves.push_back("gxh8=Q");
+    moves.push_back("Ra8");
+    moves.push_back("Qxg8");
+    moves.push_back("Rb8");
+    moves.push_back("Rxh7");
+    moves.push_back("Ra8");
+    moves.push_back("Rh8");
+    moves.push_back("Rb8");
+    moves.push_back("Qxf8#");
+    moves.push_back("1-0");
+
 
     listProcessing(moves);
     Position lastPos = positions.at(positions.size() - 1);
@@ -965,7 +1332,21 @@ int main() {
         }
         cout << endl;
     }
-    
+    for (int i = 0; i < positions.size(); i++) {
+        cout << positions.at(i).getInfo().turn;
+        cout << "\n";
+        cout << positions.at(i).getInfo().castling;
+        cout << "\n";
+        cout << positions.at(i).getInfo().enPassant;
+        cout << "\n";
+        cout << positions.at(i).getInfo().halfmove;
+        cout << "\n";
+        cout << positions.at(i).getInfo().fullmove;
+        cout << "\n";
+        cout << "***************************";
+        cout << "\n";
+
+    }
     /*svr.Get("/hi", [&](const Request& req, Response& res) {
         string image_path = "chessboard.png";
         Mat img = cv::imread(image_path, IMREAD_COLOR);
