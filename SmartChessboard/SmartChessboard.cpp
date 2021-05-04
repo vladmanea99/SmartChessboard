@@ -247,6 +247,8 @@ void initializePiecesNamesMap(map<char, int>& map) {
     map.insert({ 'P', 10 });
     map.insert({ 'Q', 11 });
     map.insert({ 'R', 12 });
+
+    // 0 0 0 ... 2 0 0
 }
 
 void getFENstring(string &str) {
@@ -254,7 +256,7 @@ void getFENstring(string &str) {
     getline(cin, str);
 }
 
-void processFENstring(string str, vector<vector<int>> mat, vector<Piece> &pieces, Info &info) {
+void processFENstring(string str, vector<vector<int>> &mat, vector<Piece> &pieces, Info &info) {
     int i = 0;
     int j = 0;
     int idx = 0;
@@ -884,6 +886,13 @@ void removePiece(int endingLine, int endingColumn, vector<vector<int>>& b) {
     }
 }
 
+bool isInCheck(string str) {
+    if (str[str.length() - 1] == '+') {
+        return true;
+    }
+    return false;
+}
+
 void listProcessing(vector<string> list) {
     for (auto& it : list) {
         vector<vector<int>> b;
@@ -1276,6 +1285,38 @@ void createImage(RenderWindow* window, vector<vector<int>>& b) {
     texture.copyToImage().saveToFile("pozitie.png");
 }
 
+string positionToFEN(vector<vector<int>>& b, struct Info& i) {
+    string FEN;
+    for (int i = 0; i < 8; i++) {
+        int emptySpaces = 0;
+        string line;
+        for (int j = 0; j < 8; j++) {
+            if (!b[i][j]) {
+                emptySpaces++;
+            }
+            else {
+                if (emptySpaces) {
+                    line += to_string(emptySpaces);
+                    emptySpaces = 0;
+                }
+                for (auto& name : piecesNamesMap) {
+                    if (name.second == b[i][j]) {
+                        line += name.first;
+                    }
+                }
+            }
+        }
+        if (emptySpaces) {
+            line += to_string(emptySpaces);
+            emptySpaces = 0;
+        }
+        line += '/';
+        FEN += line;
+    }
+    FEN.erase(FEN.length() - 1, 1);
+    FEN = FEN + ' ' + i.turn + ' ' + i.castling + ' ' + i.enPassant + ' ' + to_string(i.halfmove) + ' ' + to_string(i.fullmove);
+    return FEN;
+}
 
 int main() {
     startingBoard.resize(8);
@@ -1288,16 +1329,11 @@ int main() {
     initializePiecesNamesMap(piecesNamesMap);
     initializePieces(pieces);
 
-    string FEN;
     vector<vector<int>> piecesMat;
     piecesMat.resize(8);
     for (int i = 0; i < 8; i++) {
         piecesMat[i].resize(8);
     }
-    vector<Piece> FENPieces;
-    Info FENInfo;
-    // getFENstring(FEN);
-    // processFENstring(FEN, piecesMat, FENPieces, FENInfo);
     
     vector<string> moves;
     /*
@@ -1367,37 +1403,28 @@ int main() {
     moves.push_back("Qxf8#");
     moves.push_back("1-0");
 
-
     listProcessing(moves);
     Position lastPos = positions.at(positions.size() - 1);
     vector<vector<int>> b = positions.at(7).getBoard();
+    struct Info i = positions.at(7).getInfo();
 
     pieces = generatePiecesVector(b);
 
-    createImage(&window, b);
+    string FEN = positionToFEN(b, i);
 
+    vector<Piece> FENpieces;
+    struct Info FENinfo;
+
+    vector<vector<int>> FENboard;
+    FENboard.resize(8);
     for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            cout << b[i][j] << ' ';
-        }
-        cout << endl;
+        FENboard[i].resize(8);
     }
 
-    for (int i = 0; i < positions.size(); i++) {
-        cout << positions.at(i).getInfo().turn;
-        cout << "\n";
-        cout << positions.at(i).getInfo().castling;
-        cout << "\n";
-        cout << positions.at(i).getInfo().enPassant;
-        cout << "\n";
-        cout << positions.at(i).getInfo().halfmove;
-        cout << "\n";
-        cout << positions.at(i).getInfo().fullmove;
-        cout << "\n";
-        cout << "***************************";
-        cout << "\n";
+    processFENstring(FEN, FENboard, FENpieces, FENinfo);
 
-    }
+    createImage(&window, FENboard);
+
     /*svr.Get("/hi", [&](const Request& req, Response& res) {
         string image_path = "chessboard.png";
         Mat img = cv::imread(image_path, IMREAD_COLOR);
