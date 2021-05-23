@@ -12,6 +12,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <regex>
 
 using namespace std;
 using namespace sf;
@@ -24,6 +25,9 @@ map<int, string> piecesMap;
 map<char, int> piecesNamesMap;
 
 vector<vector<int>> startingBoard;
+
+bool hasListBeenProccessed = false;
+vector<string> moves;
 
 struct Info {
     char turn;
@@ -144,6 +148,7 @@ void drawPiece(RenderWindow* window, Piece piece) {
 }
 
 void initializePieces(vector<Piece> &pieces) {
+    pieces.clear();
     pieces.push_back(Piece(0, 0, 6));
     pieces.push_back(Piece(1, 0, 3));
     pieces.push_back(Piece(2, 0, 1));
@@ -220,6 +225,7 @@ void drawPieces(RenderWindow* window, vector<Piece> &pieces) {
 }
 
 void initializeMap(map<int, string> &map) {
+    map.clear();
     map.insert({ 1, "black_bishop" });
     map.insert({ 2, "black_king" });
     map.insert({ 3, "black_knight" });
@@ -235,6 +241,7 @@ void initializeMap(map<int, string> &map) {
 }
 
 void initializePiecesNamesMap(map<char, int>& map) {
+    map.clear();
     map.insert({ 'b', 1 });
     map.insert({ 'k', 2 });
     map.insert({ 'n', 3 });
@@ -292,7 +299,7 @@ void processFENstring(string str, vector<vector<int>> &mat, vector<Piece> &piece
     info.fullmove = stoi(infoArr[4]);
 }
 
-void kingSideCastling(vector<vector<int>> b, struct Info& i) {
+void kingSideCastling(vector<vector<int>> &b, struct Info& i) {
     if (i.turn == 'b') {
         for (auto& p : pieces) {
             if (p.getCode() == 2) {
@@ -348,7 +355,7 @@ void kingSideCastling(vector<vector<int>> b, struct Info& i) {
     }
 }
 
-void queenSideCastling(vector<vector<int>> b, struct Info& i) {
+void queenSideCastling(vector<vector<int>> &b, struct Info& i) {
     if (i.turn == 'b') {
         for (auto& p : pieces) {
             if (p.getCode() == 2) {
@@ -553,7 +560,6 @@ void pawnMove(vector<vector<int>>& b, struct Info& i, string it, int startingCol
                 }  
                 if (breakCheck) {
                     if (j - (8 - endingLine) == 2) {
-                        cout << "aici";
                         i.enPassant = it;
                     }
                     break;
@@ -1273,16 +1279,18 @@ vector<Piece> generatePiecesVector(vector<vector<int>>& b) {
     return piecesArr;
 }
 
-void createImage(RenderWindow* window, vector<vector<int>>& b) {
+void createImage(vector<vector<int>>& b) {
+    sf::RenderWindow window(sf::VideoMode(800, 800), "My window");
     vector<Piece> piecesArr = generatePiecesVector(b);
 
     Texture texture;
-    texture.create(window->getSize().x, window->getSize().y);
-    window->clear();
-    drawBoard(window);
-    drawPieces(window, piecesArr);
-    texture.update(*window);
+    texture.create(window.getSize().x, window.getSize().y);
+    window.clear();
+    drawBoard(&window);
+    drawPieces(&window, piecesArr);
+    texture.update(window);
     texture.copyToImage().saveToFile("pozitie.png");
+    window.close();
 }
 
 string positionToFEN(vector<vector<int>>& b, struct Info& i) {
@@ -1318,13 +1326,20 @@ string positionToFEN(vector<vector<int>>& b, struct Info& i) {
     return FEN;
 }
 
+bool is_number(const std::string& s)
+{
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && std::isdigit(*it)) ++it;
+    return !s.empty() && it == s.end();
+}
+
 int main() {
+    
     startingBoard.resize(8);
     for (int i = 0; i < 8; i++) {
         startingBoard[i].resize(8);
     }
 
-    sf::RenderWindow window(sf::VideoMode(800, 800), "My window");
     initializeMap(piecesMap);
     initializePiecesNamesMap(piecesNamesMap);
     initializePieces(pieces);
@@ -1334,99 +1349,132 @@ int main() {
     for (int i = 0; i < 8; i++) {
         piecesMat[i].resize(8);
     }
-    
-    vector<string> moves;
-    /*
-    moves.push_back("b4");
-    moves.push_back("a5");
-    moves.push_back("bxa5");
-    moves.push_back("Ra7");
-    moves.push_back("a3");
-    moves.push_back("Ra6");
-    moves.push_back("h3");
-    moves.push_back("Rh6");
-    */
 
-    /*
-    moves.push_back("h4");
-    moves.push_back("Na6");
-    moves.push_back("h5");
-    moves.push_back("Rb8");
-    moves.push_back("h6");
-    moves.push_back("Ra8");
-    moves.push_back("hxg7");
-    moves.push_back("h6");
-    moves.push_back("g4");
-    moves.push_back("Nf6");
-    moves.push_back("g8=Q");
-    moves.push_back("Rb8");
-    moves.push_back("Qh7");
-    moves.push_back("Ra8");
-    moves.push_back("g5");
-    moves.push_back("Rb8");
-    moves.push_back("g6");
-    moves.push_back("Ra8");
-    moves.push_back("g7");
-    moves.push_back("Rb8");
-    moves.push_back("g8=Q");
-    moves.push_back("Ra8");
-    moves.push_back("e4");
-    moves.push_back("Rb8");
-    moves.push_back("Qgg4");
-    moves.push_back("Ra8");
-    moves.push_back("Qh4");
-    moves.push_back("Rb8");
-    moves.push_back("Qg6");
-    moves.push_back("Ra8");
-    moves.push_back("Qgg5");
-    moves.push_back("Rb8");
-    moves.push_back("Qdh5");
-    moves.push_back("Ng4");
-    moves.push_back("Qh5xg4");
-    */
-    moves.push_back("h4");
-    moves.push_back("Na6");
-    moves.push_back("h5");
-    moves.push_back("Rb8");
-    moves.push_back("h6");
-    moves.push_back("Ra8");
-    moves.push_back("hxg7");
-    moves.push_back("Rb8");
-    moves.push_back("gxh8=Q");
-    moves.push_back("Ra8");
-    moves.push_back("Qxg8");
-    moves.push_back("Rb8");
-    moves.push_back("Rxh7");
-    moves.push_back("Ra8");
-    moves.push_back("Rh8");
-    moves.push_back("Rb8");
-    moves.push_back("Qxf8#");
-    moves.push_back("1-0");
+    svr.Get("/is-in-check", [&](const Request& req, Response& res) {
 
-    listProcessing(moves);
-    Position lastPos = positions.at(positions.size() - 1);
-    vector<vector<int>> b = positions.at(7).getBoard();
-    struct Info i = positions.at(7).getInfo();
+        if (!hasListBeenProccessed) {
+            res.set_content("No move list been given. Use /add-moves-list POST to add moves list", "text/html");
+            return;
+        }
+        string val;
+        int move = -1;
+        if (req.has_param("move")) {
+            val = req.get_param_value("move");
+        }
+        else {
+            res.set_content("Move parameter not found", "text/html");
+            return;
+        }
+        if (is_number(val)) {
+            move = stoi(val) - 1;
+        }
+        else {
+            res.set_content("Value is not a number", "text/html");
+            return;
+        }
+        if (move == -1 || move >= positions.size()) {
+            res.set_content("Move not found", "text/html");
+            return;
+        }
 
-    pieces = generatePiecesVector(b);
+        string position = moves.at(move);
+        bool isCheck = isInCheck(position);
+        string print = "";
+        if (isCheck) {
+            print = "The player is in check";
+        }
+        else {
+            print = "The player isn't in check";
+        }
 
-    string FEN = positionToFEN(b, i);
+        res.set_content(print, "text/html");
+    });
 
-    vector<Piece> FENpieces;
-    struct Info FENinfo;
+    svr.Get("/evaluate-position", [&](const Request& req, Response& res) {
+        if (!hasListBeenProccessed) {
+            res.set_content("No move list been given. Use /add-moves-list POST to add moves list", "text/html");
+            return;
+        }
+        string val;
+        int move = -1;
+        if (req.has_param("move")) {
+            val = req.get_param_value("move");
+        }
+        else {
+            res.set_content("Move parameter not found", "text/html");
+            return;
+        }
+        if (is_number(val)) {
+            move = stoi(val) - 1;
+        }
+        else {
+            res.set_content("Value is not a number", "text/html");
+            return;
+        }
+        if (move == -1 || move >= positions.size()) {
+            res.set_content("Move not found", "text/html");
+            return;
+        }
+        vector<vector<int>> b = positions.at(move).getBoard();
+        int score = evaluatePosition(b);
 
-    vector<vector<int>> FENboard;
-    FENboard.resize(8);
-    for (int i = 0; i < 8; i++) {
-        FENboard[i].resize(8);
-    }
+        res.set_content("Score of position is " + to_string(score), "text/html");
+    });
 
-    processFENstring(FEN, FENboard, FENpieces, FENinfo);
+    svr.Get("/encode-fen", [&](const Request& req, Response& res) {
+        if (!hasListBeenProccessed) {
+            res.set_content("No move list been given. Use /add-moves-list POST to add moves list", "text/html");
+            return;
+        }
+        string val;
+        int move = -1;
+        if (req.has_param("move")) {
+            val = req.get_param_value("move");
+        }
+        else {
+            res.set_content("Move parameter not found", "text/html");
+            return;
+        }
+        if (is_number(val)) {
+            move = stoi(val) - 1;
+        }
+        else {
+            res.set_content("Value is not a number", "text/html");
+            return;
+        }
+        if (move == -1 || move >= positions.size()) {
+            res.set_content("Move not found", "text/html");
+            return;
+        }
 
-    createImage(&window, FENboard);
+        vector<vector<int>> b = positions.at(move).getBoard();
+        struct Info i = positions.at(move).getInfo();
+        string fen = positionToFEN(b, i);
+        res.set_content("Fen string is " + fen, "text/html");
+    });
 
-    /*svr.Get("/hi", [&](const Request& req, Response& res) {
-        string image_path = "chessboard.png";
+    svr.Get("/decode-fen", [&](const Request& req, Response& res) {
+        string fen;
+        if (req.has_param("fen")) {
+            fen = req.get_param_value("fen");
+        }
+        else {
+            res.set_content("Fen not found", "text/html");
+            return;
+        }
+        vector<vector<int>> b;
+        vector<Piece> pieces;
+        Info info;
+        b.resize(8);
+        for (int i = 0; i < 8; i++) {
+            b[i].resize(8);
+        }
+
+        processFENstring(fen, b, pieces, info);
+
+        createImage(b);
+
+        string image_path = "pozitie.png";
         Mat img = cv::imread(image_path, IMREAD_COLOR);
         string encoded_png;
 
@@ -1435,11 +1483,134 @@ int main() {
         auto base64_png = reinterpret_cast<const unsigned char*>(buf.data());
         encoded_png = "data:image/jpeg;base64," + base64_encode(base64_png, buf.size());
 
-        string ceva = "<img src= " + encoded_png + ">";
-        res.set_content(ceva, "text/html");
+        string sImg = "<img src= " + encoded_png + ">";
+        res.set_content(sImg, "text/html");
+
+    });
+    svr.Get("/moves", [&](const Request& req, Response& res) {
+        if (!hasListBeenProccessed) {
+            res.set_content("No move list been given. Use /add-moves-list POST to add moves list", "text/html");
+            return;
+        }
+        string val;
+        int move = -1;
+        if (req.has_param("move")) {
+             val = req.get_param_value("move");
+        }
+        else {
+            res.set_content("Move parameter not found", "text/html");
+            return;
+        }
+        if (is_number(val)) {
+           move = stoi(val) - 1;
+        }
+        else {
+            res.set_content("Value is not a number", "text/html");
+            return;
+        }
+        if (move == -1 || move >= positions.size()) {
+            res.set_content("Move not found", "text/html");
+            return;
+        }
+        
+        vector<vector<int>> b = positions.at(move).getBoard();
+        struct Info i = positions.at(move).getInfo();
+        createImage(b);
+
+        string image_path = "pozitie.png";
+        Mat img = cv::imread(image_path, IMREAD_COLOR);
+        string encoded_png;
+
+        vector<uchar> buf;
+        cv::imencode(".png", img, buf);
+        auto base64_png = reinterpret_cast<const unsigned char*>(buf.data());
+        encoded_png = "data:image/jpeg;base64," + base64_encode(base64_png, buf.size());
+
+        string sImg = "<img src= " + encoded_png + ">";
+        res.set_content(sImg, "text/html");
+        
         });
 
-    svr.listen("127.0.0.1", 8080);*/
+    svr.Post("/add-moves-list", [](const httplib::Request& req, httplib::Response& res, const httplib::ContentReader& content_reader) {
+        std::string body;
+        content_reader([&](const char* data, size_t data_length) {
+            body.append(data, data_length);
+            return true;
+        });
+        
+        bool hasBodyBeenProccessed = false;
+        int i = 1;
+        if (body.find("1.") == string::npos) {
+            res.set_content("Body format not correct, first move not found", "text/plain");
+            return;
+        }
+        moves.clear();
+        initializeMap(piecesMap);
+        initializePiecesNamesMap(piecesNamesMap);
+        initializePieces(pieces);
+        positions.clear();
+        body = body.substr(body.find("1."));
+        string endOfBody;
+        while (!hasBodyBeenProccessed) {
+            string nextMoveNumber = "" + to_string(i + 1);
+            nextMoveNumber = nextMoveNumber + ". ";
+            string currentMoveNumber = "" + to_string(i);
+            currentMoveNumber = currentMoveNumber + ". ";
+
+            int catVreau;
+            if (body.find(nextMoveNumber) == string::npos) {
+                bool correctFormat = false;
+                endOfBody = "1-0";
+                if (body.find(endOfBody) != string::npos) {
+                    catVreau = body.find(endOfBody) - body.find(currentMoveNumber) - currentMoveNumber.length() - 1;
+                    correctFormat = true;
+                }
+                endOfBody = "0-1";
+                if (body.find(endOfBody) != string::npos) {
+                    catVreau = body.find(endOfBody) - body.find(currentMoveNumber) - currentMoveNumber.length() - 1;
+                    correctFormat = true;
+                }
+                endOfBody = "1/2-1/2";
+                if (body.find(endOfBody) != string::npos) {
+                    catVreau = body.find(endOfBody) - body.find(currentMoveNumber) - currentMoveNumber.length() - 1;
+                    correctFormat = true;
+                }
+                endOfBody = "*";
+                if (body.find(endOfBody) != string::npos) {
+                    catVreau = body.find(endOfBody) - body.find(currentMoveNumber) - currentMoveNumber.length() - 1;
+                    correctFormat = true;
+                }
+                if (!correctFormat) {
+                    res.set_content("Body format not correct, next move or end of match not found", "text/plain");
+                    break;
+                }
+                hasBodyBeenProccessed = true;
+            }
+            else {
+                catVreau = body.find(nextMoveNumber) - body.find(currentMoveNumber) - currentMoveNumber.length() - 1;
+            }
+            string currentMoves = body.substr(body.find(currentMoveNumber) + currentMoveNumber.length(), catVreau);
+
+            string space = " ";
+            if (currentMoves.find(space) == string::npos) {
+                res.set_content("Body format not correct, bad move format, no space found between moves of same position number", "text/plain");
+                break;
+            }
+            
+            string whiteMove = currentMoves.substr(0, currentMoves.find(space));
+            string blackMove = currentMoves.substr(currentMoves.find(space) + 1);
+
+            moves.push_back(whiteMove);
+            moves.push_back(blackMove);
+
+            i++;
+        }
+        listProcessing(moves);
+        hasListBeenProccessed = true;
+        res.set_content("Move list has been proccesed", "text/plain");
+    });
+
+    svr.listen("127.0.0.1", 8080);
 
     return 0;
 }
