@@ -1333,6 +1333,8 @@ bool is_number(const std::string& s)
     return !s.empty() && it == s.end();
 }
 
+string fen = "";
+
 int main() {
     
     startingBoard.resize(8);
@@ -1454,11 +1456,7 @@ int main() {
     });
 
     svr.Get("/decode-fen", [&](const Request& req, Response& res) {
-        string fen;
-        if (req.has_param("fen")) {
-            fen = req.get_param_value("fen");
-        }
-        else {
+        if (fen == "") {
             res.set_content("Fen not found", "text/html");
             return;
         }
@@ -1530,6 +1528,29 @@ int main() {
         res.set_content(sImg, "text/html");
         
         });
+
+    svr.Post("/add-fen-string", [](const httplib::Request& req, httplib::Response& res, const httplib::ContentReader& content_reader) {
+        std::string body;
+        content_reader([&](const char* data, size_t data_length) {
+            body.append(data, data_length);
+            return true;
+        });
+
+        if (body.find("fen\" : ") == string::npos) {
+            res.set_content("Body format not correct, fen not found", "text/plain");
+            return;
+        }
+        string sFen = body.substr(body.find("fen\" : \"") + 8, body.find("\"}") - body.find("fen\" : \"") - 8);
+
+        if (!regex_match(sFen, regex("^\\s*^(((?:[rnbqkpRNBQKP1-8]+\\/){7})[rnbqkpRNBQKP1-8]+)\\s([b|w]) [((K?Q?k?q?)|\\-)] (([abcdefgh][36])|\\-) (\\d+) (\\d+)"))) {
+            res.set_content("Fen string format not correct", "text/plain");
+            return;
+        }
+        
+        fen = sFen;
+
+        res.set_content("Fen string processed", "text/plain");
+    });
 
     svr.Post("/add-moves-list", [](const httplib::Request& req, httplib::Response& res, const httplib::ContentReader& content_reader) {
         std::string body;

@@ -1,10 +1,10 @@
 ﻿  SmartChessboard.cpp
 D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(145,62): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
 D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(145,42): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(1565,1): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(1570,1): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(1575,1): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(1580,1): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(1590,1): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(1586,1): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(1591,1): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(1596,1): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(1601,1): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(1611,1): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
 D:\github\SmartChessboard\SmartChessboard\SmartChessboard.cpp(506): warning C4715: 'searchLineOrColumn': not all control paths return a value
   SmartChessboard.vcxproj -> D:\github\SmartChessboard\x64\Debug\SmartChessboard.exe
