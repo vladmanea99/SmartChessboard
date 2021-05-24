@@ -1,0 +1,124 @@
+{
+  "device-name": "Smart Chessboard",
+  "device-type": "Chessboard",
+  "buffers-count": 7,
+  "input-buffers": {
+    "1": {
+      "token-delimitators": "", // Symbol that separates the tokens in the buffer
+      "protocol": "HTTP", // The protocol used to communicate with this buffer
+      "prefix": "http://127.0.0.1:8080/add-moves-list/", // The buffer requires that it is initialized with this content
+      "buffer-tokens": [ // Description of each of the tokens that this buffer can receive. Think of them as the message's variables.
+        {
+          "name": "moves",
+          "description": "List of moves to be processed. It is put in the body of the POST request",
+          "token-type": "string", // Type of token
+          "byte-size": 4096, // Maximum size of the token
+          "regex-rule": "", // Optional parameter
+          "optional": false // Can it give a null value on this token?
+        }
+      ]
+    },
+    "2": {
+      "token-delimitators": "", // Symbol that separates the tokens in the buffer
+      "protocol": "HTTP", // The protocol used to communicate with this buffer
+      "prefix": "http://127.0.0.1:8080/add-fen-string/", // The buffer requires that it is initialized with this content
+      "buffer-tokens": [ // Description of each of the tokens that this buffer can receive. Think of them as the message's variables.
+        {
+          "name": "fen",
+          "description": "Fen string to be processed",
+          "token-type": "string", // Type of token
+          "byte-size": 4096, // Maximum size of the token
+          "regex-rule": "^\\s*^(((?:[rnbqkpRNBQKP1-8]+\\/){7})[rnbqkpRNBQKP1-8]+)\\s([b|w]) [((K?Q?k?q?)|\\-)] (([abcdefgh][36])|\\-) (\\d+) (\\d+)", // Optional parameter
+          "optional": false // Can it give a null value on this token?
+        }
+      ]
+    },
+    "output-buffers": {
+      "1": {
+        "token-delimitators": " ",
+        "protocol": "HTTP",
+        "prefix": "http://127.0.0.1:8080/moves", // The buffer requires that it is initialized with this content
+        "caller": "remote", // Remote or Local. The caller variable describes who runs this buffer. Either
+        // your app sends the data (local), or the data is requested by another device (remote)
+        "buffer-tokens": [
+          {
+            "name": "move",
+            "description": "Command that returns an image at the specific move",
+            "token-type": "number", // Type of token
+            "byte-size": 4,
+            "regex-rule": "^[1-9][0-9]*", // Optional parameter
+            "optional": false // Can it give a null value on this token?
+          }
+        ]
+      },
+      "2": {
+        "token-delimitators": " ",
+        "protocol": "HTTP",
+        "prefix": "http://127.0.0.1:8080/decode-fen/", // The buffer requires that it is initialized with this content
+        "caller": "remote", // Remote or Local. The caller variable describes who runs this buffer. Either
+        // your app sends the data (local), or the data is requested by another device (remote)
+        "buffer-tokens": [
+          {
+            "name": "",
+            "description": "",
+            "token-type": "", // Type of token
+            "byte-size": 0,
+            "regex-rule": "", // Optional parameter
+            "optional": true // Can it give a null value on this token?
+          }
+        ]
+      },
+      "3": {
+        "token-delimitators": " ",
+        "protocol": "HTTP",
+        "prefix": "http://127.0.0.1:8080/encode-fen/", // The buffer requires that it is initialized with this content
+        "caller": "remote", // Remote or Local. The caller variable describes who runs this buffer. Either
+        // your app sends the data (local), or the data is requested by another device (remote)
+        "buffer-tokens": [
+          {
+            "name": "move",
+            "description": "move that is needed to be encoded into a fen string",
+            "token-type": "number", // Type of token
+            "byte-size": 4,
+            "regex-rule": "^[1-9][0-9]*", // Optional parameter
+            "optional": false // Can it give a null value on this token?
+          }
+        ]
+      },
+      "4": {
+        "token-delimitators": " ",
+        "protocol": "HTTP",
+        "prefix": "http://127.0.0.1:8080/evaluate-position/", // The buffer requires that it is initialized with this content
+        "caller": "remote", // Remote or Local. The caller variable describes who runs this buffer. Either
+        // your app sends the data (local), or the data is requested by another device (remote)
+        "buffer-tokens": [
+          {
+            "name": "move",
+            "description": "move that is needed to be evaluated",
+            "token-type": "number", // Type of token
+            "byte-size": 4,
+            "regex-rule": "^[1-9][0-9]*", // Optional parameter
+            "optional": false // Can it give a null value on this token?
+          }
+        ]
+      },
+      "5": {
+        "token-delimitators": " ",
+        "protocol": "HTTP",
+        "prefix": "http://127.0.0.1:8080/is-in-check/", // The buffer requires that it is initialized with this content
+        "caller": "remote", // Remote or Local. The caller variable describes who runs this buffer. Either
+        // your app sends the data (local), or the data is requested by another device (remote)
+        "buffer-tokens": [
+          {
+            "name": "move",
+            "description": "move that is needed to be evaluated for check",
+            "token-type": "number", // Type of token
+            "byte-size": 4,
+            "regex-rule": "^[1-9][0-9]*", // Optional parameter
+            "optional": false // Can it give a null value on this token?
+          }
+        ]
+      }
+    }
+  }
+}
