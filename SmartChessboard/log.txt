@@ -1,0 +1,7 @@
+Get is in check command. No move list been given. Use /add-moves-list POST to add moves list
+Get decode fen command. Fen not found
+Post add fen string command. 8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - - 99 50
+Post add moves list command. Worked
+Get decode fen command. Worked.
+Get moves command. Worked.
+Get is in check command. The player is in check

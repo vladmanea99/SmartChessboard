@@ -13,6 +13,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <regex>
+#include <fstream>
 
 using namespace std;
 using namespace sf;
@@ -28,6 +29,9 @@ vector<vector<int>> startingBoard;
 
 bool hasListBeenProccessed = false;
 vector<string> moves;
+
+ofstream out;
+const string FILENAME = "log.txt";
 
 struct Info {
     char turn;
@@ -119,6 +123,12 @@ public:
 
 vector<Position> positions;
 vector<Piece> pieces;
+
+void addInLog(string fileName, string log) {
+    out.open(fileName, ios::app);
+    out << log << endl;
+    out.close();
+}
 
 void drawBoard(RenderWindow* window) {
     sf::Texture texture;
@@ -1354,8 +1364,12 @@ int main() {
 
     svr.Get("/is-in-check", [&](const Request& req, Response& res) {
 
+        string log = "Get is in check command. ";
+
         if (!hasListBeenProccessed) {
             res.set_content("No move list been given. Use /add-moves-list POST to add moves list", "text/html");
+            log = log + "No move list been given. Use /add-moves-list POST to add moves list";
+            addInLog(FILENAME, log);
             return;
         }
         string val;
@@ -1364,6 +1378,8 @@ int main() {
             val = req.get_param_value("move");
         }
         else {
+            log = log + "Move parameter not found";
+            addInLog(FILENAME, log);
             res.set_content("Move parameter not found", "text/html");
             return;
         }
@@ -1371,10 +1387,14 @@ int main() {
             move = stoi(val) - 1;
         }
         else {
+            log = log + "Value is not a number";
+            addInLog(FILENAME, log);
             res.set_content("Value is not a number", "text/html");
             return;
         }
         if (move == -1 || move >= positions.size()) {
+            log = log + "Move not found";
+            addInLog(FILENAME, log);
             res.set_content("Move not found", "text/html");
             return;
         }
@@ -1389,11 +1409,19 @@ int main() {
             print = "The player isn't in check";
         }
 
+        log = log + print;
+        addInLog(FILENAME, log);
+
         res.set_content(print, "text/html");
     });
 
     svr.Get("/evaluate-position", [&](const Request& req, Response& res) {
+
+        string log = "Get evaluate position command. ";
+
         if (!hasListBeenProccessed) {
+            log = log + "No move list been given. Use /add-moves-list POST to add moves list";
+            addInLog(FILENAME, log);
             res.set_content("No move list been given. Use /add-moves-list POST to add moves list", "text/html");
             return;
         }
@@ -1403,6 +1431,8 @@ int main() {
             val = req.get_param_value("move");
         }
         else {
+            log = log + "Move parameter not found";
+            addInLog(FILENAME, log);
             res.set_content("Move parameter not found", "text/html");
             return;
         }
@@ -1410,21 +1440,33 @@ int main() {
             move = stoi(val) - 1;
         }
         else {
+            log = log + "Value is not a number";
+            addInLog(FILENAME, log);
             res.set_content("Value is not a number", "text/html");
             return;
         }
         if (move == -1 || move >= positions.size()) {
+            log = log + "Move not found";
+            addInLog(FILENAME, log);
             res.set_content("Move not found", "text/html");
             return;
         }
         vector<vector<int>> b = positions.at(move).getBoard();
         int score = evaluatePosition(b);
 
+        log = log + "Score of position is " + to_string(score);
+        addInLog(FILENAME, log);
+
         res.set_content("Score of position is " + to_string(score), "text/html");
     });
 
     svr.Get("/encode-fen", [&](const Request& req, Response& res) {
+
+        string log = "Get encode fen command. ";
+
         if (!hasListBeenProccessed) {
+            log = log + "No move list been given. Use /add-moves-list POST to add moves list";
+            addInLog(FILENAME, log);
             res.set_content("No move list been given. Use /add-moves-list POST to add moves list", "text/html");
             return;
         }
@@ -1434,6 +1476,8 @@ int main() {
             val = req.get_param_value("move");
         }
         else {
+            log = log + "Move parameter not found";
+            addInLog(FILENAME, log);
             res.set_content("Move parameter not found", "text/html");
             return;
         }
@@ -1441,10 +1485,14 @@ int main() {
             move = stoi(val) - 1;
         }
         else {
+            log = log + "Value is not a number";
+            addInLog(FILENAME, log);
             res.set_content("Value is not a number", "text/html");
             return;
         }
         if (move == -1 || move >= positions.size()) {
+            log = log + "Move not found";
+            addInLog(FILENAME, log);
             res.set_content("Move not found", "text/html");
             return;
         }
@@ -1452,11 +1500,18 @@ int main() {
         vector<vector<int>> b = positions.at(move).getBoard();
         struct Info i = positions.at(move).getInfo();
         string fen = positionToFEN(b, i);
+        log = log + "Fen string is " + fen;
+        addInLog(FILENAME, log);
         res.set_content("Fen string is " + fen, "text/html");
     });
 
     svr.Get("/decode-fen", [&](const Request& req, Response& res) {
+
+        string log = "Get decode fen command. ";
+
         if (fen == "") {
+            log = log + "Fen not found";
+            addInLog(FILENAME, log);
             res.set_content("Fen not found", "text/html");
             return;
         }
@@ -1482,11 +1537,20 @@ int main() {
         encoded_png = "data:image/jpeg;base64," + base64_encode(base64_png, buf.size());
 
         string sImg = "<img src= " + encoded_png + ">";
+
+        log = log + "Worked.";
+        addInLog(FILENAME, log);
+
         res.set_content(sImg, "text/html");
 
     });
     svr.Get("/moves", [&](const Request& req, Response& res) {
+
+        string log = "Get moves command. ";
+
         if (!hasListBeenProccessed) {
+            log = log + "No move list been given. Use /add-moves-list POST to add moves list";
+            addInLog(FILENAME, log);
             res.set_content("No move list been given. Use /add-moves-list POST to add moves list", "text/html");
             return;
         }
@@ -1496,6 +1560,8 @@ int main() {
              val = req.get_param_value("move");
         }
         else {
+            log = log + "Move parameter not found";
+            addInLog(FILENAME, log);
             res.set_content("Move parameter not found", "text/html");
             return;
         }
@@ -1503,10 +1569,14 @@ int main() {
            move = stoi(val) - 1;
         }
         else {
+            log = log + "Value is not a number";
+            addInLog(FILENAME, log);
             res.set_content("Value is not a number", "text/html");
             return;
         }
         if (move == -1 || move >= positions.size()) {
+            log = log + "Move not found";
+            addInLog(FILENAME, log);
             res.set_content("Move not found", "text/html");
             return;
         }
@@ -1524,12 +1594,17 @@ int main() {
         auto base64_png = reinterpret_cast<const unsigned char*>(buf.data());
         encoded_png = "data:image/jpeg;base64," + base64_encode(base64_png, buf.size());
 
+        log = log + "Worked.";
+        addInLog(FILENAME, log);
+
         string sImg = "<img src= " + encoded_png + ">";
         res.set_content(sImg, "text/html");
         
         });
 
     svr.Post("/add-fen-string", [](const httplib::Request& req, httplib::Response& res, const httplib::ContentReader& content_reader) {
+        
+        string log = "Post add fen string command. ";
         std::string body;
         content_reader([&](const char* data, size_t data_length) {
             body.append(data, data_length);
@@ -1537,22 +1612,29 @@ int main() {
         });
 
         if (body.find("fen\" : ") == string::npos) {
+            log = log + "Body format not correct, fen not found";
+            addInLog(FILENAME, log);
             res.set_content("Body format not correct, fen not found", "text/plain");
             return;
         }
         string sFen = body.substr(body.find("fen\" : \"") + 8, body.find("\"}") - body.find("fen\" : \"") - 8);
 
         if (!regex_match(sFen, regex("^\\s*^(((?:[rnbqkpRNBQKP1-8]+\\/){7})[rnbqkpRNBQKP1-8]+)\\s([b|w]) [((K?Q?k?q?)|\\-)] (([abcdefgh][36])|\\-) (\\d+) (\\d+)"))) {
+            log = log + "Fen string format not correct";
+            addInLog(FILENAME, log);
             res.set_content("Fen string format not correct", "text/plain");
             return;
         }
         
         fen = sFen;
-
+        log = log + fen;
+        addInLog(FILENAME, log);
         res.set_content("Fen string processed", "text/plain");
     });
 
     svr.Post("/add-moves-list", [](const httplib::Request& req, httplib::Response& res, const httplib::ContentReader& content_reader) {
+        
+        string log = "Post add moves list command. ";
         std::string body;
         content_reader([&](const char* data, size_t data_length) {
             body.append(data, data_length);
@@ -1562,6 +1644,8 @@ int main() {
         bool hasBodyBeenProccessed = false;
         int i = 1;
         if (body.find("1.") == string::npos) {
+            log = log + "Body format not correct, first move not found";
+            addInLog(FILENAME, log);
             res.set_content("Body format not correct, first move not found", "text/plain");
             return;
         }
@@ -1602,6 +1686,8 @@ int main() {
                     correctFormat = true;
                 }
                 if (!correctFormat) {
+                    log = log + "Body format not correct, next move or end of match not found";
+                    addInLog(FILENAME, log);
                     res.set_content("Body format not correct, next move or end of match not found", "text/plain");
                     break;
                 }
@@ -1614,6 +1700,8 @@ int main() {
 
             string space = " ";
             if (currentMoves.find(space) == string::npos) {
+                log = log + "Body format not correct, bad move format, no space found between moves of same position number";
+                addInLog(FILENAME, log);
                 res.set_content("Body format not correct, bad move format, no space found between moves of same position number", "text/plain");
                 break;
             }
@@ -1628,6 +1716,8 @@ int main() {
         }
         listProcessing(moves);
         hasListBeenProccessed = true;
+        log = log + "Worked";
+        addInLog(FILENAME, log);
         res.set_content("Move list has been proccesed", "text/plain");
     });
 
